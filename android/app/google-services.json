@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "355447639535",
+    "project_id": "pickuppal-e569d",
+    "storage_bucket": "pickuppal-e569d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:355447639535:android:7939baabcb8af145093a1a",
+        "android_client_info": {
+          "package_name": "com.example.pick_up_pal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyVNhhR4qOIqABn81E0SZj3HzvY48BPXQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

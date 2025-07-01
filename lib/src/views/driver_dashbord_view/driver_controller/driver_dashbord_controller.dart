@@ -1,0 +1,268 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:pick_up_pal/src/controller/constant/linkers/linkers.dart';
+import 'package:pick_up_pal/src/views/auth_views/user_id.dart';
+import 'package:pick_up_pal/src/utills/snackbar.dart';
+import '../../track_pickup/google_map_controller.dart';
+
+class DriverController extends GetxController {
+  var driverName = "".obs;
+  var driverEmail = "".obs;
+  var assignedChildren = <Map<String, String>>[].obs;
+  var bus = <Map<String, String>>[].obs;
+  var isLoading = true.obs;
+  /// Per-student loading state for status update
+  var childStatusLoading = <String, bool>{}.obs;
+  /// Track which button is loading in the dialog (docId+status)
+  var loadingStatusButton = ''.obs;
+  var isLocationShared = true.obs;
+  var lastNotificationId = ''.obs;
+
+  final UserId userIdController = Get.find<UserId>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchData();
+    fetchLocationSharing();
+  }
+
+  void fetchData() async {
+    try {
+      isLoading.value = true;
+      await Future.wait([
+        fetchDriverData(),
+        fetchAssignedChildren(),
+      ]);
+      isLoading.value = false;
+    } catch (e) {
+      print('------Error fetching data: ${e.toString()}');
+      isLoading.value = false;
+      Get.snackbar(
+        'Error',
+        'Failed to load data: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  void fetchLocationSharing() async {
+    String userId = userIdController.userId.value;
+    var doc = await FirebaseFirestore.instance.collection('userData').doc(userId).get();
+    if (doc.exists) {
+      isLocationShared.value = doc.data()?['locationSharing'] ?? true;
+    }
+  }
+
+  void toggleLocationSharing(bool value) async {
+    isLocationShared.value = value;
+    String userId = userIdController.userId.value;
+    await FirebaseFirestore.instance.collection('userData').doc(userId).update({
+      'locationSharing': value,
+    });
+  }
+
+  Future<void> fetchDriverData() async {
+    await userIdController.getUserIdAndRole();
+    driverName.value = userIdController.userName.value;
+    driverEmail.value = userIdController.userEmail.value;
+    print('------Fetched Driver Name: ${driverName.value}');
+    print('------Fetched Driver Email: ${driverEmail.value}');
+  }
+
+  Future<void> fetchAssignedChildren() async {
+    try {
+      await userIdController.getUserIdAndRole();
+      if (userIdController.userId.value.isEmpty) {
+        print('------No user ID available');
+        assignedChildren.clear();
+        return;
+      }
+
+      var driverDoc = await FirebaseFirestore.instance
+          .collection("userData")
+          .doc(userIdController.userId.value)
+          .get();
+
+      if (!driverDoc.exists) {
+        print('------No driver data found in Firestore');
+        assignedChildren.clear();
+        return;
+      }
+
+      String assignedBus = driverDoc.data()?['busses'] ?? "";
+      print('------Driver assigned bus: $assignedBus');
+
+      if (assignedBus.isEmpty) {
+        print('------No bus assigned to driver');
+        assignedChildren.clear();
+        return;
+      }
+
+      var childDocs = await FirebaseFirestore.instance
+          .collection("addChild")
+          .where('bus', isEqualTo: assignedBus.trim())
+          .get();
+
+      assignedChildren.clear();
+      if (childDocs.docs.isEmpty) {
+        print('------No children found for bus: $assignedBus');
+      } else {
+        for (var doc in childDocs.docs) {
+          var data = doc.data();
+          String childName = data['childName'] ?? "N/A";
+          String status = data['status'] ?? "Not Picked Up";
+
+          // Status/marker time-based reset logic
+          if (status == 'Dropped Off' && data.containsKey('dropMarker') && data['dropMarker'] != null) {
+            var dropMarkerData = data['dropMarker'];
+            print('------DEBUG dropMarkerData: $dropMarkerData');
+            print('------DEBUG dropMarkerData[droppedAt]: [33m${dropMarkerData['droppedAt']}[0m');
+            DateTime droppedAt = DateTime.tryParse(dropMarkerData['droppedAt'] ?? '') ?? DateTime.now().subtract(Duration(minutes: 2));
+            print('------DEBUG droppedAt: [32m$droppedAt[0m, now: [32m${DateTime.now()}[0m');
+            print('------DEBUG difference: [31m${DateTime.now().difference(droppedAt).inSeconds} seconds[0m');
+            if (DateTime.now().difference(droppedAt).inSeconds >= 60) {
+              await FirebaseFirestore.instance.collection('addChild').doc(doc.id).update({
+                'status': 'Not Picked Up',
+                'updatedAt': Timestamp.now(),
+                'dropMarker': null,
+              });
+              print('------Auto-reset: $childName status changed from Dropped Off to Not Picked Up after 60 seconds (app restart safe)');
+              status = 'Not Picked Up';
+            }
+          }
+
+          assignedChildren.add({
+            'childName': childName,
+            'status': status,
+            'docId': doc.id,
+          });
+          print('------Fetched child: $childName with status: $status');
+        }
+      }
+    } catch (e) {
+      print('------Error fetching assigned children: ${e.toString()}');
+      assignedChildren.clear();
+      throw e;
+    }
+  }
+
+  Future<void> updateChildStatus(String docId, String status, {VoidCallback? onComplete}) async {
+    try {
+      loadingStatusButton.value = docId + status;
+      await FirebaseFirestore.instance
+          .collection("addChild")
+          .doc(docId)
+          .update({
+        'status': status,
+        'updatedAt': Timestamp.now(),
+      });
+      print('------Updated status for docId: $docId to $status');
+      // Fetch child name and userId for notification/history
+      var doc = await FirebaseFirestore.instance.collection("addChild").doc(docId).get();
+      String childName = doc.data()?['childName'] ?? 'the child';
+      String userId = doc.data()?['userId'] ?? '';
+      // Friendly notification message
+      String message = '';
+      if (status == 'Onboard') {
+        message = "$childName is now Onboard.";
+      } else if (status == 'Dropped Off') {
+        message = "$childName has been Dropped Off.";
+      } else if (status == 'Not Picked Up') {
+        message = "$childName is marked as Not Picked Up.";
+      } else {
+        message = "Status for $childName has been changed to '$status'.";
+      }
+      // Save notification for parent
+      await FirebaseFirestore.instance.collection('pickupNotifications').add({
+        'userId': userId,
+        'childName': childName,
+        'message': message,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+      // Save pickup history for Onboard and Dropped Off
+      if (status == 'Onboard' || status == 'Dropped Off') {
+        await FirebaseFirestore.instance.collection('pickupHistory').add({
+          'childId': docId,
+          'childName': childName,
+          'userId': userId,
+          'status': status,
+          'pickupTime': DateTime.now().toIso8601String(),
+        });
+      }
+      NotificationMessage.show(
+        title: "Status Updated",
+        message: message,
+        backGroundColor: Colors.green,
+        textColor: Colors.white,
+      );
+      fetchAssignedChildren();
+      // If status is Dropped Off, auto-reset after 10 seconds
+      if (status == 'Dropped Off') {
+        // Add yellow marker on map (for driver side, already handled)
+        double dropLat = 0.0;
+        double dropLng = 0.0;
+        if (Get.isRegistered<GoogleMapControllerX>()) {
+          final mapController = Get.find<GoogleMapControllerX>();
+          mapController.addDropMarker(
+            lat: mapController.latitude.value,
+            lng: mapController.longitude.value,
+            childName: childName,
+          );
+          dropLat = mapController.latitude.value;
+          dropLng = mapController.longitude.value;
+        } else {
+          // Fallback: try to get from Firestore (not ideal, but prevents error)
+          var driverDoc = await FirebaseFirestore.instance.collection('userData').doc(userIdController.userId.value).get();
+          dropLat = driverDoc.data()?['latitude'] ?? 0.0;
+          dropLng = driverDoc.data()?['longitude'] ?? 0.0;
+        }
+        // Add dropMarker field in addChild document for parent side
+        await FirebaseFirestore.instance.collection('addChild').doc(docId).update({
+          'dropMarker': {
+            'lat': dropLat,
+            'lng': dropLng,
+            'droppedAt': DateTime.now().toIso8601String(),
+            'childName': childName,
+          }
+        });
+        Future.delayed(Duration(seconds: 60), () async {
+          await FirebaseFirestore.instance.collection("addChild").doc(docId).update({
+            'status': 'Not Picked Up',
+            'updatedAt': Timestamp.now(),
+            'dropMarker': null, // Remove dropMarker after 1 minute
+          });
+          fetchAssignedChildren();
+        });
+      }
+      if (onComplete != null) onComplete();
+    } catch (e) {
+      print('------Error updating child status: ${e.toString()}');
+      Get.snackbar(
+        'Error',
+        'Failed to update status: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      loadingStatusButton.value = '';
+    }
+  }
+
+  // Add this method to update driver's location in Firestore
+  Future<void> updateDriverLocation(double latitude, double longitude) async {
+    try {
+      String userId = userIdController.userId.value;
+      await FirebaseFirestore.instance.collection('userData').doc(userId).update({
+        'latitude': latitude,
+        'longitude': longitude,
+      });
+    } catch (e) {
+      print('Error updating driver location: '
+          '[31m$e[0m');
+    }
+  }
+}
