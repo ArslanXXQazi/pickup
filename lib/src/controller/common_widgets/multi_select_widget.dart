@@ -51,6 +51,11 @@ class MultiSelectGradeWidget extends StatelessWidget {
               showDialog(
                 context: context,
                 builder: (context) {
+                  // Admin/teacher mode ke liye assigned grades ka map le lo
+                  Map<String, List<String>> assignedGradesMap = {};
+                  if (!isSingleSelection && adminController != null) {
+                    assignedGradesMap = Map<String, List<String>>.from(adminController.assignedGrades);
+                  }
                   return AlertDialog(
                     backgroundColor: Colors.white,
                     title: GreenText(
@@ -58,35 +63,63 @@ class MultiSelectGradeWidget extends StatelessWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                    content: SizedBox(
+                      height: screenHeight * 0.6,
+                      width: screenWidth * 0.8,
+                      child: ListView(
+                        shrinkWrap: true,
                         children: grades.map((grade) {
                           return Obx(() {
                             final isSelected = tempSelectedGrades.contains(grade);
                             final maxLimit = isSingleSelection ? 1 : 2;
                             final canSelect = tempSelectedGrades.length < maxLimit || isSelected;
 
+                            // Roman Urdu: Check karo grade kisi aur teacher ko assign hai ya nahi
+                            bool isAssignedToOther = false;
+                            if (!isSingleSelection && teacherId != null && adminController != null) {
+                              assignedGradesMap.forEach((tid, clist) {
+                                if (tid != teacherId && clist.contains(grade)) {
+                                  isAssignedToOther = true;
+                                }
+                              });
+                            }
+
+                            // Agar grade kisi aur ko assign hai to disable karo aur (assigned) likho
                             return CheckboxListTile(
                               activeColor: AppColors.yellowColor,
                               tileColor: Colors.transparent,
-                              title: Text(
-                                grade,
-                                style: TextStyle(fontSize: screenWidth * 0.04),
+                              title: Row(
+                                children: [
+                                  Text(
+                                    grade,
+                                    style: TextStyle(fontSize: screenWidth * 0.04),
+                                  ),
+                                  if (isAssignedToOther) ...[
+                                    SizedBox(width: 8),
+                                    Text(
+                                      '(assigned)',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: screenWidth * 0.035,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ]
+                                ],
                               ),
                               value: isSelected,
-                              onChanged: canSelect
-                                  ? (bool? value) {
+                              onChanged: (isAssignedToOther || !canSelect)
+                                  ? null
+                                  : (bool? value) {
                                 if (isSingleSelection && value == true) {
-                                  tempSelectedGrades.clear(); // Clear for single selection
+                                  tempSelectedGrades.clear();
                                   tempSelectedGrades.add(grade);
                                 } else if (!isSingleSelection && value == true && tempSelectedGrades.length < 2) {
                                   tempSelectedGrades.add(grade);
                                 } else if (value == false) {
                                   tempSelectedGrades.remove(grade);
                                 }
-                              }
-                                  : null,
+                              },
                             );
                           });
                         }).toList(),

@@ -217,7 +217,7 @@ class AssignClasses extends StatelessWidget {
                     // Multi-select grades widget
                     Obx(() => MultiSelectGradeWidget(
                       teacherId: teacherId,
-                      grades: adminController.getAvailableGrades(teacherId),
+                      grades: adminController.grades,
                       selectedGrades: adminController.selectedClasses[teacherId]!.obs, // Convert to RxList
                     )),
                     SizedBox(height: screenHeight * 0.02),
