@@ -256,4 +256,38 @@ class AuthController extends GetxController {
     }
     isLoading.value = false;
   }
+
+  /// Send password reset email
+  Future<void> forgotPassword() async {
+    try {
+      isLoading.value = true;
+      String email = forgotController.text.trim();
+
+      if (email.isEmpty) {
+        throw Exception("Please enter an email address");
+      }
+
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      NotificationMessage.show(
+        title: "Success",
+        message: "Password reset link sent to your email",
+        backGroundColor: Colors.green,
+        textColor: Colors.white,
+      );
+
+      forgotController.clear();
+      Get.toNamed(AppRoutes.loginView);
+    } catch (error) {
+      NotificationMessage.show(
+        title: "Error",
+        message: error.toString(),
+        backGroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
 }
