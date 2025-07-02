@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:pick_up_pal/src/views/auth_views/user_id.dart';
 import 'package:pick_up_pal/src/views/parent_dashbord/parent_controller.dart';
+import 'dart:async';
 
 class TeacherController extends GetxController {
   final UserId userIdController = Get.find<UserId>();
@@ -14,12 +15,17 @@ class TeacherController extends GetxController {
   var completedPickupsCount = 0.obs;
   var loadingPickupChildId = ''.obs;
   var lastNotificationId = ''.obs;
+  StreamSubscription? _pickupQueueSubscription;
 
   @override
   void onInit() {
     super.onInit();
     fetchTeacherData();
-    ever(assignedClasses, (_) => fetchPickupQueueStudents());
+    ever(assignedClasses, (_) {
+      fetchPickupQueueStudents();
+      listenToPickupQueue();
+    });
+    listenToPickupQueue();
   }
 
   Future<void> fetchTeacherData() async {
@@ -154,5 +160,44 @@ class TeacherController extends GetxController {
     } catch (e) {
       print('Error resetting pickup status: $e');
     }
+  }
+
+  void listenToPickupQueue() {
+    _pickupQueueSubscription?.cancel();
+    if (assignedClasses.isEmpty) {
+      pickupQueueStudents.clear();
+      arrivedParentsCount.value = 0;
+      return;
+    }
+    _pickupQueueSubscription = FirebaseFirestore.instance
+        .collection('addChild')
+        .where('class', whereIn: assignedClasses)
+        .where('pickup', isEqualTo: 'Self Pickup')
+        .snapshots()
+        .listen((querySnapshot) {
+      pickupQueueStudents.clear();
+      arrivedParentsCount.value = 0;
+      for (var doc in querySnapshot.docs) {
+        var data = doc.data();
+        bool parentNotified = data['parentNotified'] ?? false;
+        bool pickedUp = data['pickedUp'] ?? false;
+        pickupQueueStudents.add({
+          'childName': data['childName']?.toString() ?? 'N/A',
+          'description': parentNotified ? 'Parent Arrived' : 'Waiting for pickup',
+          'parentNotified': parentNotified,
+          'pickedUp': pickedUp,
+          'childId': doc.id,
+        });
+        if (parentNotified && !pickedUp) {
+          arrivedParentsCount.value++;
+        }
+      }
+    });
+  }
+
+  @override
+  void onClose() {
+    _pickupQueueSubscription?.cancel();
+    super.onClose();
   }
 }

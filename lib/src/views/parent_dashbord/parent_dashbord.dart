@@ -25,6 +25,7 @@ class _ParentDashbordState extends State<ParentDashbord> {
   final ParentController parentController = Get.find<ParentController>();
 
   StreamSubscription<QuerySnapshot>? _notificationSubscription;
+  StreamSubscription<QuerySnapshot>? _pickupNotificationSubscription;
   String? _lastNotificationId;
 
   @override
@@ -35,6 +36,8 @@ class _ParentDashbordState extends State<ParentDashbord> {
       if (userIdController.userId.value.isNotEmpty) {
         userIdController.getChildData();
         _listenToParentNotifications(userIdController.userId.value);
+        parentController.fetchPickupNotifications();
+        _listenToPickupNotifications(userIdController.userId.value);
       }
     });
   }
@@ -49,32 +52,50 @@ class _ParentDashbordState extends State<ParentDashbord> {
         .collection('pickupNotifications')
         .where('userId', isEqualTo: userId)
         .orderBy('timestamp', descending: true)
-        .limit(1)
+        .limit(20)
         .snapshots()
         .listen((snapshot) async {
-      if (snapshot.docs.isNotEmpty) {
-        final doc = snapshot.docs.first;
-        final data = doc.data();
+      final prefs = await SharedPreferences.getInstance();
+      List<String> seenIds = prefs.getStringList('seenParentNotificationIds') ?? [];
+      bool updated = false;
+      for (var doc in snapshot.docs) {
         final docId = doc.id;
-        final prefs = await SharedPreferences.getInstance();
-        final lastSeenId = prefs.getString('lastNotificationId');
-        if (data != null && mounted && docId != lastSeenId) {
-          await prefs.setString('lastNotificationId', docId);
-          parentController.lastNotificationId.value = docId;
+        final data = doc.data();
+        if (!seenIds.contains(docId) && data != null && mounted) {
           NotificationMessage.show(
             title: "Notification",
             message: data['message'] ?? '',
             backGroundColor: Colors.blue,
             textColor: Colors.white,
           );
+          seenIds.add(docId);
+          updated = true;
         }
       }
+      if (updated) {
+        await prefs.setStringList('seenParentNotificationIds', seenIds);
+      }
+    });
+  }
+
+  void _listenToPickupNotifications(String userId) {
+    _pickupNotificationSubscription?.cancel();
+    _pickupNotificationSubscription = FirebaseFirestore.instance
+        .collection('pickupNotifications')
+        .where('userId', isEqualTo: userId)
+        .orderBy('timestamp', descending: true)
+        .limit(20)
+        .snapshots()
+        .listen((snapshot) {
+      parentController.pickupNotificationsList.value =
+          snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
     });
   }
 
   @override
   void dispose() {
     _notificationSubscription?.cancel();
+    _pickupNotificationSubscription?.cancel();
     super.dispose();
   }
 
