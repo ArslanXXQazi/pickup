@@ -97,6 +97,7 @@ class TeacherController extends GetxController {
           arrivedParentsCount.value++;
         }
       }
+      _sortPickupQueueStudents();
     } catch (e) {
       print('Error fetching pickup queue students: $e');
       pickupQueueStudents.clear();
@@ -192,6 +193,23 @@ class TeacherController extends GetxController {
           arrivedParentsCount.value++;
         }
       }
+      _sortPickupQueueStudents();
+    });
+  }
+
+  // Sort pickupQueueStudents: 1) parentNotified & !pickedUp, 2) !parentNotified & !pickedUp, 3) pickedUp
+  void _sortPickupQueueStudents() {
+    pickupQueueStudents.sort((a, b) {
+      int getOrder(Map<String, dynamic> student) {
+        if (student['pickedUp'] == true) return 2; // bottom
+        if (student['parentNotified'] == true) return 0; // top
+        return 1; // middle
+      }
+      int orderA = getOrder(a);
+      int orderB = getOrder(b);
+      if (orderA != orderB) return orderA.compareTo(orderB);
+      // Optionally, sort by childName within each group
+      return (a['childName'] ?? '').compareTo(b['childName'] ?? '');
     });
   }
 
