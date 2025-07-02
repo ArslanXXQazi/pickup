@@ -109,6 +109,17 @@ class AdminDashbordView extends StatelessWidget {
                       color: Colors.blue,
                       textColor: Colors.white,
                     ),
+                     SizedBox(height: screenHeight * 0.02),
+                YellowButton(
+                      onTap: (){
+                        Get.toNamed(AppRoutes.allChildDetail);
+                      },
+                      text: "Student Details",
+                      borderRadius: 15,
+                      borderColor: Colors.transparent,
+                      color: Colors.blue,
+                      textColor: Colors.white,
+                    ),
                 SizedBox(height: screenHeight * 0.02),
                 Column(
                   children: [
