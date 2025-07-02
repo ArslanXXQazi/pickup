@@ -113,7 +113,9 @@ class LogInView extends StatelessWidget {
                   SizedBox(height: screenHeight * 0.02),
                   /// Forgot Password text
                   GreenText(
-                    onTap: () {},
+                    onTap: () {
+                      Get.toNamed(AppRoutes.forgotPassword);
+                    },
                     text: "Forgot Password?",
                     fontSize: 18, // Font size unchanged
                     fontWeight: FontWeight.w400,

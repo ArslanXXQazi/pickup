@@ -1,6 +1,7 @@
 
 import 'package:pick_up_pal/src/controller/constant/linkers/linkers.dart';
 import 'package:pick_up_pal/src/views/admin_dashBoard_view/view_all_parents/view_all_parents.dart';
+import 'package:pick_up_pal/src/views/auth_views/forgot_password_view.dart';
 import 'package:pick_up_pal/src/views/parent_dashbord/add_child_view/add_child_view.dart';
 import 'package:pick_up_pal/src/views/parent_dashbord/add_child_view/view_all_child.dart';
 import 'package:pick_up_pal/src/views/admin_dashBoard_view/add_users/add_users_view.dart';
@@ -47,6 +48,7 @@ class AppRoutes{
   static String   assignBussesView ='/assignBussesView';
   static String   assignClassesView ='/assignClassesView';
   static String   viewAllParents ='/viewAllParents';
+  static String   forgotPassword ='/forgotPassword';
 
 
 
@@ -154,6 +156,10 @@ class AppRoutes{
     GetPage(
       name: viewAllParents,
       page: ()=>ViewAllParents()),
+
+    GetPage(
+      name: forgotPassword,
+      page: ()=>ForgotPasswordView()),
 
   ];
 }

@@ -226,17 +226,15 @@ class AdminController extends GetxController {
   Future<void> assignBus(String driverId, String driverName, String busName) async {
     try {
       driverLoadingStates[driverId] = true;
-      print('Assigning bus: $busName to driver: $driverId ($driverName)');
       await FirebaseFirestore.instance.collection('userData').doc(driverId).update({
         'busses': busName,
         'updatedAt': Timestamp.now(),
       });
       selectedBuses[driverId] = busName; // Update local state
-      print('Bus assigned successfully to $driverId');
       driverLoadingStates[driverId] = false;
       NotificationMessage.show(
         title: 'Success',
-        message: 'Bus $busName assigned to $driverName',
+        message: '$busName assigned to $driverName',
         backGroundColor: Colors.green,
         textColor: Colors.white,
       );
@@ -256,7 +254,6 @@ class AdminController extends GetxController {
   Future<void> assignClassToTeacher(String teacherId, String teacherName, List<String> classNames) async {
     try {
       driverLoadingStates[teacherId] = true;
-      print('Assigning classes: $classNames to teacher: $teacherId ($teacherName)');
       await FirebaseFirestore.instance.collection('userData').doc(teacherId).update({
         'classes': classNames,
         'updatedAt': Timestamp.now(),
@@ -295,6 +292,12 @@ class AdminController extends GetxController {
   // Function to set selected classes for a teacher
   void setSelectedClasses(String teacherId, List<String> classes) {
     selectedClasses[teacherId] = classes;
+    if (classes.isEmpty) {
+      assignedGrades[teacherId] = [];
+    } else {
+      assignedGrades[teacherId] = classes;
+    }
+    assignedGrades.refresh();
   }
 
   // Function to get selected classes for a teacher

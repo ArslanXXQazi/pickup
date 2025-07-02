@@ -27,6 +27,9 @@ class MultiSelectGradeWidget extends StatelessWidget {
     final AdminController? adminController = isSingleSelection ? null : Get.find<AdminController>();
     final ParentController? parentController = isSingleSelection ? Get.find<ParentController>() : null;
 
+    // Grades list ke start mein 'None' option add karo (sirf admin/teacher mode)
+    final List<String> gradesWithNone = isSingleSelection ? grades : ['None', ...grades];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -68,7 +71,7 @@ class MultiSelectGradeWidget extends StatelessWidget {
                       width: screenWidth * 0.8,
                       child: ListView(
                         shrinkWrap: true,
-                        children: grades.map((grade) {
+                        children: gradesWithNone.map((grade) {
                           return Obx(() {
                             final isSelected = tempSelectedGrades.contains(grade);
                             final maxLimit = isSingleSelection ? 1 : 2;
@@ -76,13 +79,16 @@ class MultiSelectGradeWidget extends StatelessWidget {
 
                             // Roman Urdu: Check karo grade kisi aur teacher ko assign hai ya nahi
                             bool isAssignedToOther = false;
-                            if (!isSingleSelection && teacherId != null && adminController != null) {
+                            if (!isSingleSelection && teacherId != null && adminController != null && grade != 'None') {
                               assignedGradesMap.forEach((tid, clist) {
                                 if (tid != teacherId && clist.contains(grade)) {
                                   isAssignedToOther = true;
                                 }
                               });
                             }
+
+                            // Agar 'None' select hai to baqi options disable kar do
+                            final isNoneSelected = !isSingleSelection && tempSelectedGrades.contains('None');
 
                             // Agar grade kisi aur ko assign hai to disable karo aur (assigned) likho
                             return CheckboxListTile(
@@ -108,9 +114,13 @@ class MultiSelectGradeWidget extends StatelessWidget {
                                 ],
                               ),
                               value: isSelected,
-                              onChanged: (isAssignedToOther || !canSelect)
+                              onChanged: (isAssignedToOther || !canSelect || isNoneSelected)
                                   ? null
                                   : (bool? value) {
+                                // Agar koi class select ho to 'None' unselect ho jaye
+                                if (!isSingleSelection && tempSelectedGrades.contains('None')) {
+                                  tempSelectedGrades.remove('None');
+                                }
                                 if (isSingleSelection && value == true) {
                                   tempSelectedGrades.clear();
                                   tempSelectedGrades.add(grade);
@@ -142,7 +152,12 @@ class MultiSelectGradeWidget extends StatelessWidget {
                           if (isSingleSelection) {
                             parentController!.selectedGrade.assignAll(tempSelectedGrades);
                           } else if (teacherId != null) {
-                            adminController!.setSelectedClasses(teacherId!, tempSelectedGrades.toList());
+                            // Agar 'None' select hai to empty list assign karo
+                            if (tempSelectedGrades.contains('None')) {
+                              adminController!.setSelectedClasses(teacherId!, []);
+                            } else {
+                              adminController!.setSelectedClasses(teacherId!, tempSelectedGrades.toList());
+                            }
                           }
                           Navigator.pop(context);
                         },

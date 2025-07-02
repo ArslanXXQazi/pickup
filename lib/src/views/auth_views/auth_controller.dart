@@ -15,6 +15,7 @@ class AuthController extends GetxController {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmController = TextEditingController();
+  final TextEditingController forgotController = TextEditingController();
 
   final UserId userIdController = Get.find<UserId>();
   final AdminController adminController = Get.put(AdminController());
