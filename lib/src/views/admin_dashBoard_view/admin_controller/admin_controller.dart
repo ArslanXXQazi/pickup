@@ -171,9 +171,20 @@ class AdminController extends GetxController {
     }
   }
 
-  Future<void> deleteUser(String userId) async {
+  Future<void> deleteUser(String userId, String role) async {
     try {
       isLoading.value = true;
+      // Agar role Parent hai tu uske saare children bhi delete karo
+      if (role == "Parent") {
+        var children = await FirebaseFirestore.instance
+            .collection("addChild")
+            .where("userId", isEqualTo: userId)
+            .get();
+        for (var doc in children.docs) {
+          await doc.reference.delete();
+        }
+      }
+      // Yahan aap driver ke liye bhi koi related data delete kar sakte hain agar zarurat ho
       await FirebaseFirestore.instance.collection("userData").doc(userId).delete();
       assignedGrades.remove(userId); // Remove assigned grades for deleted teacher
       Get.find<UserId>().fetchRoleCounts();
@@ -192,7 +203,7 @@ class AdminController extends GetxController {
         backGroundColor: Colors.red,
         textColor: Colors.white,
       );
-      print("------Error deleting user: ${e.toString()}");
+      print("------Error deleting user: \\${e.toString()}");
     }
   }
 

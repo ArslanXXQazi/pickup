@@ -253,7 +253,7 @@ class ManageUserView extends StatelessWidget {
                                                             title: "Are you sure you want to Delete?",
                                                             buttonName: "Delete",
                                                             onTap: () {
-                                                              adminController.deleteUser(userId);
+                                                              adminController.deleteUser(userId, role);
                                                               Get.back();
                                                             },
                                                           ),
