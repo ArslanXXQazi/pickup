@@ -99,28 +99,35 @@ class AdminDashbordView extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: screenHeight * 0.02),
-                YellowButton(
-                      onTap: (){
-                        Get.toNamed(AppRoutes.viewAllParents);
-                      },
-                      text: "Parents Details",
-                      borderRadius: 15,
-                      borderColor: Colors.transparent,
-                      color: Colors.blue,
-                      textColor: Colors.white,
+                Row(
+                  children: [
+                    Expanded(
+                      child: YellowButton(
+                        onTap: (){
+                          Get.toNamed(AppRoutes.allChildDetail);
+                        },
+                        text: "Student Details",
+                        borderRadius: 15,
+                        borderColor: Colors.transparent,
+                        color: Colors.blue,
+                        textColor: Colors.white,
+                      ),
                     ),
-                     SizedBox(height: screenHeight * 0.02),
-                YellowButton(
-                      onTap: (){
-                        Get.toNamed(AppRoutes.allChildDetail);
-                      },
-                      text: "Student Details",
-                      borderRadius: 15,
-                      borderColor: Colors.transparent,
-                      color: Colors.blue,
-                      textColor: Colors.white,
+                    SizedBox(width: screenWidth * 0.02),
+                    Expanded(
+                      child: YellowButton(
+                        onTap: (){
+                          Get.toNamed(AppRoutes.viewAllParents);
+                        },
+                        text: "Parents Details",
+                        borderRadius: 15,
+                        borderColor: Colors.transparent,
+                        color: AppColors.yellowColor,
+                        //  textColor: Colors.white,
+                      ),
                     ),
-                SizedBox(height: screenHeight * 0.02),
+                  ],
+                ), SizedBox(height: screenHeight * 0.02),
                 Column(
                   children: [
                     // PickupOverviewWidget(pickupScheduled: "8", pickupCompleted: "3"),
