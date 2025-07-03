@@ -135,7 +135,7 @@ class _AllChildDetailState extends State<AllChildDetail> {
                                   ),
                                   Divider(color: Colors.blue,),
                                   GreenText(
-                                    text: 'Grade: $className',
+                                    text: '$className',
                                     fontSize: fontSizeMedium,
                                     fontWeight: FontWeight.w600,
                                     textAlign: TextAlign.start,

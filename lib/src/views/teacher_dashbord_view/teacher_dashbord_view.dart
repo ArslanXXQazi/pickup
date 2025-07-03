@@ -306,27 +306,40 @@ class PickupQueueWidget extends StatelessWidget {
             if (parentNotified)
               Expanded(
                 flex: 30,
-                child: Obx(() =>
-                teacherController.loadingPickupChildId.value == childId
-                    ? AppLoader2()
-                    : YellowButton(
-                  onTap: pickedUp ? null : () {
-                    onPickup();
-                    NotificationMessage.show(
-                      title: "Success",
-                      message: "Child picked up successfully",
-                      backGroundColor: Colors.green,
-                      textColor: Colors.white,
-                    );
-                  },
-                  text: pickedUp ? "Picked Up" : "Pickup",
-                  height: 40,
-                  fontSize: 14,
-                  borderRadius: 10,
-                  color: pickedUp ? Colors.green : AppColors.yellowColor,
-                  textColor: pickedUp ? Colors.white : AppColors.darkBlue,
-                ),
-                ),
+                child: Obx(() {
+                  if (teacherController.loadingPickupChildId.value == childId) {
+                    return AppLoader2();
+                  }
+                  String btnText = "Pickup";
+                  Color btnColor = AppColors.yellowColor;
+                  bool btnEnabled = !pickedUp;
+                  if (pickedUp) {
+                    btnText = "Picked Up";
+                    btnColor = Colors.green;
+                    btnEnabled = false;
+                  } else if (parentNotified && !pickedUp) {
+                    btnText = "Pickup";
+                    btnColor = AppColors.yellowColor;
+                    btnEnabled = true;
+                  }
+                  return YellowButton(
+                    onTap: btnEnabled ? () {
+                      onPickup();
+                      NotificationMessage.show(
+                        title: "Success",
+                        message: "You have picked up the child.",
+                        backGroundColor: Colors.green,
+                        textColor: Colors.white,
+                      );
+                    } : null,
+                    text: btnText,
+                    height: 40,
+                    fontSize: 14,
+                    borderRadius: 10,
+                    color: btnColor,
+                    textColor: btnEnabled ? AppColors.darkBlue : Colors.white,
+                  );
+                }),
               ),
           ],
         ),

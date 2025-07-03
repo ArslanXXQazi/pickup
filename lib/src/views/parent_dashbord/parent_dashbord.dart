@@ -35,6 +35,7 @@ class _ParentDashbordState extends State<ParentDashbord> {
     userIdController.getUserIdAndRole().then((_) {
       if (userIdController.userId.value.isNotEmpty) {
         userIdController.getChildData();
+        userIdController.getChildStatusStream();
         _listenToParentNotifications(userIdController.userId.value);
         parentController.fetchPickupNotifications();
         _listenToPickupNotifications(userIdController.userId.value);
@@ -86,7 +87,27 @@ class _ParentDashbordState extends State<ParentDashbord> {
         .orderBy('timestamp', descending: true)
         .limit(20)
         .snapshots()
-        .listen((snapshot) {
+        .listen((snapshot) async {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> seenIds = prefs.getStringList('seenParentNotificationIds') ?? [];
+      bool updated = false;
+      for (var doc in snapshot.docs) {
+        final docId = doc.id;
+        final data = doc.data();
+        if (!seenIds.contains(docId) && data != null && mounted) {
+          NotificationMessage.show(
+            title: "Notification",
+            message: data['message'] ?? '',
+            backGroundColor: Colors.blue,
+            textColor: Colors.white,
+          );
+          seenIds.add(docId);
+          updated = true;
+        }
+      }
+      if (updated) {
+        await prefs.setStringList('seenParentNotificationIds', seenIds);
+      }
       parentController.pickupNotificationsList.value =
           snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
     });
@@ -273,17 +294,55 @@ class _ParentDashbordState extends State<ParentDashbord> {
                                   Obx(() {
                                     if (index >= userIdController.pickup.length) return SizedBox();
                                     if (userIdController.pickup[index] == "Self Pickup") {
-                                      return Obx(() => parentController.childLoading[userIdController.childIds[index]] == true
-                                          ? AppLoader2() // Show loader when loading for this child
-                                          : YellowButton(
-                                        onTap: () {
-                                          String childId = userIdController
-                                              .childIds[index];
-                                          parentController.notifySchool(childId);
-                                        },
-                                        text: "I've Arrived - Notify School",
+                                      String childId = userIdController.childIds[index];
+                                      var status = userIdController.childStatusList.firstWhereOrNull((e) => e['childId'] == childId);
+                                      bool parentNotified = status?['parentNotified'] ?? false;
+                                      bool pickedUp = status?['pickedUp'] ?? false;
+                                      bool parentConfirmedPickup = status?['parentConfirmedPickup'] ?? false;
+                                      if (parentController.childLoading[childId] == true) {
+                                        return AppLoader2();
+                                      }
+                                      if (pickedUp && !parentConfirmedPickup && parentController.confirmLoading[childId] == true) {
+                                        return YellowButton(
+                                          onTap: null,
+                                          text: "Confirm Pickup...",
+                                          borderRadius: 20,
+                                          color: Colors.green,
+                                          textColor: Colors.white,
+                                        );
+                                      }
+                                      String btnText = "I've Arrived - Notify School";
+                                      Color btnColor = AppColors.yellowColor;
+                                      bool btnEnabled = true;
+                                      Color btnTextColor = Colors.black;
+                                      if (parentNotified && !pickedUp) {
+                                        btnText = "Waiting";
+                                        btnColor = Colors.grey.shade400;
+                                        btnEnabled = false;
+                                      } else if (pickedUp && !parentConfirmedPickup) {
+                                        btnText = "Confirm Pickup";
+                                        btnColor = Colors.green;
+                                        btnEnabled = true;
+                                        btnTextColor = Colors.white;
+                                      } else if (parentConfirmedPickup) {
+                                        btnText = "Picked Up";
+                                        btnColor = Colors.green;
+                                        btnEnabled = false;
+                                      }
+                                      print('childId: $childId, parentNotified: $parentNotified, pickedUp: $pickedUp, parentConfirmedPickup: $parentConfirmedPickup');
+                                      return YellowButton(
+                                        onTap: btnEnabled ? () {
+                                          if (pickedUp && !parentConfirmedPickup) {
+                                            parentController.confirmParentPickup(childId);
+                                          } else {
+                                            parentController.notifySchool(childId);
+                                          }
+                                        } : null,
+                                        text: btnText,
                                         borderRadius: 20,
-                                      ));
+                                        color: btnColor,
+                                        textColor: btnTextColor,
+                                      );
                                     } else {
                                       return Column(
                                         crossAxisAlignment:

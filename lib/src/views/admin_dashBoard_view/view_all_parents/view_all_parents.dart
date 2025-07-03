@@ -140,7 +140,7 @@ class ViewAllParents extends StatelessWidget {
                                       textAlign: TextAlign.start,
                                     ),
                                     GreenText(
-                                      text: '    Grade: $childClass',
+                                      text: '    $childClass',
                                       fontSize: fontSizeMedium,
                                       fontWeight: FontWeight.w600,
                                       textAlign: TextAlign.start,

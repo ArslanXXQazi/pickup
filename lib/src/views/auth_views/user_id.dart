@@ -15,6 +15,7 @@ class UserId extends GetxController {
   var parentCount = 0.obs; // Added for Parent count
   var driverCount = 0.obs; // Added for Driver count
   var teacherCount = 0.obs; // Added for Teacher count
+  var childStatusList = <Map<String, dynamic>>[].obs;
 
   String get userRole => role.value; // Getter for userRole
 
@@ -101,5 +102,27 @@ class UserId extends GetxController {
     parentCount.value = 0;
     driverCount.value = 0;
     teacherCount.value = 0;
+  }
+
+  void getChildStatusStream() {
+    String userIdValue = userId.value;
+    if (userIdValue.isNotEmpty) {
+      FirebaseFirestore.instance
+          .collection('addChild')
+          .where('userId', isEqualTo: userIdValue)
+          .snapshots()
+          .listen((querySnapshot) {
+        childStatusList.clear();
+        for (var doc in querySnapshot.docs) {
+          var data = doc.data();
+          childStatusList.add({
+            'childId': doc.id,
+            'parentNotified': data['parentNotified'] ?? false,
+            'pickedUp': data['pickedUp'] ?? false,
+            'parentConfirmedPickup': data['parentConfirmedPickup'] ?? false,
+          });
+        }
+      });
+    }
   }
 }

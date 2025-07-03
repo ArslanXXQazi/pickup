@@ -10,6 +10,7 @@ import 'package:pick_up_pal/src/views/teacher_dashbord_view/teacher_controller/t
 class ParentController extends GetxController {
   var isLoading = false.obs;
   var childLoading = <String, bool>{}.obs;
+  var confirmLoading = <String, bool>{}.obs;
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController schoolController = TextEditingController();
@@ -272,6 +273,60 @@ class ParentController extends GetxController {
       }
     } catch (e) {
       print('Error cleaning up old pickup notifications: $e');
+    }
+  }
+
+  Future<void> confirmParentPickup(String childId) async {
+    try {
+      confirmLoading[childId] = true;
+      await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
+        "parentConfirmedPickup": true,
+      });
+      // Fetch child data for notification
+      var doc = await FirebaseFirestore.instance.collection("addChild").doc(childId).get();
+      var data = doc.data();
+      if (data != null) {
+        String childName = data['childName'] ?? '';
+        String className = data['class'] ?? '';
+        // Query teacher with this class
+        var teacherQuery = await FirebaseFirestore.instance
+            .collection('userData')
+            .where('role', isEqualTo: 'Teacher')
+            .where('classes', arrayContains: className)
+            .get();
+        if (teacherQuery.docs.isNotEmpty) {
+          String teacherId = teacherQuery.docs.first.id;
+          await FirebaseFirestore.instance.collection('teacherNotifications').add({
+            'teacherId': teacherId,
+            'childName': childName,
+            'message': 'I have picked up my child.',
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        }
+      }
+      NotificationMessage.show(
+        title: "Success",
+        message: "Pickup confirmed. Teacher notified.",
+        backGroundColor: Colors.green,
+        textColor: Colors.white,
+      );
+      // 60 min baad reset
+      Future.delayed(Duration(minutes: 60), () async {
+        await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
+          "parentNotified": false,
+          "pickedUp": false,
+          "parentConfirmedPickup": false,
+        });
+      });
+    } catch (e) {
+      NotificationMessage.show(
+        title: "Error",
+        message: e.toString(),
+        backGroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    } finally {
+      confirmLoading[childId] = false;
     }
   }
 }

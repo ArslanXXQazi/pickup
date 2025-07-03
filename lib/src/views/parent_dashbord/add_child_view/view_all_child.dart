@@ -12,6 +12,7 @@ class ViewAllChild extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final UserId userIdController = Get.find<UserId>();
+    userIdController.getChildStatusStream();
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -122,16 +123,34 @@ class ViewAllChild extends StatelessWidget {
                                 if (index >= userIdController.pickup.length) return SizedBox();
                                 if (userIdController.pickup[index] == "Self Pickup") {
                                   ParentController parentController = Get.find<ParentController>();
-                                  return parentController.childLoading[userIdController.childIds[index]] == true
-                                      ? AppLoader2()
-                                      : YellowButton(
-                                          onTap: () {
-                                            String childId = userIdController.childIds[index];
-                                            parentController.notifySchool(childId);
-                                          },
-                                          text: "I've Arrived - Notify School",
-                                          borderRadius: 20,
-                                        );
+                                  String childId = userIdController.childIds[index];
+                                  var status = userIdController.childStatusList.firstWhereOrNull((e) => e['childId'] == childId);
+                                  bool parentNotified = status?['parentNotified'] ?? false;
+                                  bool pickedUp = status?['pickedUp'] ?? false;
+                                  if (parentController.childLoading[childId] == true) {
+                                    return AppLoader2();
+                                  }
+                                  String btnText = "I've Arrived - Notify School";
+                                  Color btnColor = AppColors.yellowColor;
+                                  bool btnEnabled = true;
+                                  if (parentNotified && !pickedUp) {
+                                    btnText = "Waiting";
+                                    btnColor = Colors.grey.shade400;
+                                    btnEnabled = false;
+                                  } else if (pickedUp) {
+                                    btnText = "Picked Up";
+                                    btnColor = Colors.green;
+                                    btnEnabled = false;
+                                  }
+                                  return YellowButton(
+                                    onTap: btnEnabled ? () {
+                                      parentController.notifySchool(childId);
+                                    } : null,
+                                    text: btnText,
+                                    borderRadius: 20,
+                                    color: btnColor,
+                                    textColor: btnEnabled ? Colors.black : Colors.white,
+                                  );
                                 } else {
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,

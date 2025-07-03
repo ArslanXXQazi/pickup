@@ -61,25 +61,28 @@ class _DriverDashBordViewState extends State<DriverDashBordView> {
         .collection('driverNotifications')
         .where('driverId', isEqualTo: driverId)
         .orderBy('timestamp', descending: true)
-        .limit(1)
+        .limit(20)
         .snapshots()
         .listen((snapshot) async {
-      if (snapshot.docs.isNotEmpty) {
-        final doc = snapshot.docs.first;
-        final data = doc.data();
+      final prefs = await SharedPreferences.getInstance();
+      List<String> seenIds = prefs.getStringList('seenDriverNotificationIds') ?? [];
+      bool updated = false;
+      for (var doc in snapshot.docs) {
         final docId = doc.id;
-        final prefs = await SharedPreferences.getInstance();
-        final lastSeenId = prefs.getString('lastDriverNotificationId');
-        if (data != null && mounted && docId != lastSeenId) {
-          await prefs.setString('lastDriverNotificationId', docId);
-          controller.lastNotificationId.value = docId;
+        final data = doc.data();
+        if (!seenIds.contains(docId) && data != null && mounted) {
           NotificationMessage.show(
             title: "Notification",
             message: data['message'] ?? '',
             backGroundColor: Colors.orange,
             textColor: Colors.white,
           );
+          seenIds.add(docId);
+          updated = true;
         }
+      }
+      if (updated) {
+        await prefs.setStringList('seenDriverNotificationIds', seenIds);
       }
     });
   }

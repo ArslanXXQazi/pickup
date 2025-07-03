@@ -245,11 +245,11 @@ class DriverController extends GetxController {
             'childName': childName,
           }
         });
-        Future.delayed(Duration(seconds: 60), () async {
+        Future.delayed(Duration(minutes: 60), () async {
           await FirebaseFirestore.instance.collection("addChild").doc(docId).update({
             'status': 'Not Picked Up',
             'updatedAt': Timestamp.now(),
-            'dropMarker': null, // Remove dropMarker after 1 minute
+            'dropMarker': null, // Remove dropMarker after 1 hour
           });
           fetchAssignedChildren();
         });

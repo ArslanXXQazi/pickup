@@ -110,6 +110,7 @@ class TeacherController extends GetxController {
       loadingPickupChildId.value = childId;
       await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
         "pickedUp": true,
+        "parentConfirmedPickup": false,
       });
       // Fetch childName and userId for history
       var doc = await FirebaseFirestore.instance.collection("addChild").doc(childId).get();
@@ -135,7 +136,7 @@ class TeacherController extends GetxController {
       completedPickupsCount.value++;
       resetHistoryAfterDelay();
       await fetchPickupQueueStudents(); // Refresh the queue
-      resetPickupStatusAfterDelay(childId); // 60 seconds baad reset
+      resetPickupStatusAfterDelay(childId); // 60 minutes baad reset
     } catch (e) {
       print('Error marking pickup: $e');
     } finally {
@@ -143,19 +144,20 @@ class TeacherController extends GetxController {
     }
   }
 
-  // 60 seconds baad completedPickupsCount ko 0 karo
+  // 60 minutes baad completedPickupsCount ko 0 karo
   void resetHistoryAfterDelay() async {
-    await Future.delayed(Duration(seconds: 10));
+    await Future.delayed(Duration(minutes: 60));
     completedPickupsCount.value = 0;
   }
 
-  // 60 seconds baad parentNotified aur pickedUp ko false karo
+  // 60 minutes baad parentNotified, pickedUp, parentConfirmedPickup ko false karo
   void resetPickupStatusAfterDelay(String childId) async {
-    await Future.delayed(Duration(seconds: 10));
+    await Future.delayed(Duration(minutes: 60));
     try {
       await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
         "parentNotified": false,
         "pickedUp": false,
+        "parentConfirmedPickup": false,
       });
       await fetchPickupQueueStudents(); // Refresh the queue
     } catch (e) {
