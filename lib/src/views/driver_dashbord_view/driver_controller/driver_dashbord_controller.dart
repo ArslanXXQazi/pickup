@@ -216,7 +216,7 @@ class DriverController extends GetxController {
         textColor: Colors.white,
       );
       fetchAssignedChildren();
-      // If status is Dropped Off, auto-reset after 10 seconds
+      // If status is Dropped Off, auto-reset after 1 hour
       if (status == 'Dropped Off') {
         // Add yellow marker on map (for driver side, already handled)
         double dropLat = 0.0;
@@ -245,7 +245,7 @@ class DriverController extends GetxController {
             'childName': childName,
           }
         });
-        Future.delayed(Duration(minutes: 60), () async {
+        Future.delayed(Duration(hours: 1), () async {
           await FirebaseFirestore.instance.collection("addChild").doc(docId).update({
             'status': 'Not Picked Up',
             'updatedAt': Timestamp.now(),

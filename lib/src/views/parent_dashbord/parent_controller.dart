@@ -299,7 +299,7 @@ class ParentController extends GetxController {
           await FirebaseFirestore.instance.collection('teacherNotifications').add({
             'teacherId': teacherId,
             'childName': childName,
-            'message': 'I have picked up my child.',
+            'message': 'I have picked up my child $childName.',
             'timestamp': DateTime.now().toIso8601String(),
           });
         }
@@ -310,13 +310,17 @@ class ParentController extends GetxController {
         backGroundColor: Colors.green,
         textColor: Colors.white,
       );
-      // 60 min baad reset
-      Future.delayed(Duration(minutes: 60), () async {
+      // 1 hour baad reset
+      Future.delayed(Duration(hours: 1), () async {
         await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
           "parentNotified": false,
           "pickedUp": false,
           "parentConfirmedPickup": false,
         });
+        // Also reset teacher's completedPickupsCount after 1 hour
+        try {
+          Get.find<TeacherController>().resetHistoryAfterDelay();
+        } catch (e) {}
       });
     } catch (e) {
       NotificationMessage.show(

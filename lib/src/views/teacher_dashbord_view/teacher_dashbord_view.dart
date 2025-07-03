@@ -55,9 +55,10 @@ class _TeacherDashbordViewState extends State<TeacherDashbordView> {
         final docId = doc.id;
         final data = doc.data();
         if (!seenIds.contains(docId) && data != null && mounted) {
+          String message = data['message'] ?? '';
           NotificationMessage.show(
             title: "Notification",
-            message: data['message'] ?? '',
+            message: message,
             backGroundColor: Colors.blue,
             textColor: Colors.white,
           );

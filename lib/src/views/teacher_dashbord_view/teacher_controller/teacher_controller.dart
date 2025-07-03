@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:pick_up_pal/src/views/auth_views/user_id.dart';
 import 'package:pick_up_pal/src/views/parent_dashbord/parent_controller.dart';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TeacherController extends GetxController {
   final UserId userIdController = Get.find<UserId>();
@@ -20,12 +21,31 @@ class TeacherController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _loadCompletedPickupsCount();
     fetchTeacherData();
     ever(assignedClasses, (_) {
       fetchPickupQueueStudents();
       listenToPickupQueue();
     });
     listenToPickupQueue();
+  }
+
+  Future<void> _loadCompletedPickupsCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    int count = prefs.getInt('completedPickupsCount') ?? 0;
+    String? lastUpdateStr = prefs.getString('completedPickupsLastUpdate');
+    DateTime? lastUpdate = lastUpdateStr != null ? DateTime.tryParse(lastUpdateStr) : null;
+    if (lastUpdate != null && DateTime.now().difference(lastUpdate) < Duration(hours: 1)) {
+      completedPickupsCount.value = count;
+    } else {
+      completedPickupsCount.value = 0;
+    }
+  }
+
+  Future<void> _saveCompletedPickupsCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('completedPickupsCount', completedPickupsCount.value);
+    await prefs.setString('completedPickupsLastUpdate', DateTime.now().toIso8601String());
   }
 
   Future<void> fetchTeacherData() async {
@@ -134,9 +154,9 @@ class TeacherController extends GetxController {
         await Get.find<ParentController>().cleanupOldPickupNotifications();
       }
       completedPickupsCount.value++;
+      _saveCompletedPickupsCount();
       resetHistoryAfterDelay();
       await fetchPickupQueueStudents(); // Refresh the queue
-      resetPickupStatusAfterDelay(childId); // 60 minutes baad reset
     } catch (e) {
       print('Error marking pickup: $e');
     } finally {
@@ -144,25 +164,11 @@ class TeacherController extends GetxController {
     }
   }
 
-  // 60 minutes baad completedPickupsCount ko 0 karo
+  // 1 hour baad completedPickupsCount ko 0 karo
   void resetHistoryAfterDelay() async {
-    await Future.delayed(Duration(minutes: 60));
+    await Future.delayed(Duration(hours: 1));
     completedPickupsCount.value = 0;
-  }
-
-  // 60 minutes baad parentNotified, pickedUp, parentConfirmedPickup ko false karo
-  void resetPickupStatusAfterDelay(String childId) async {
-    await Future.delayed(Duration(minutes: 60));
-    try {
-      await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
-        "parentNotified": false,
-        "pickedUp": false,
-        "parentConfirmedPickup": false,
-      });
-      await fetchPickupQueueStudents(); // Refresh the queue
-    } catch (e) {
-      print('Error resetting pickup status: $e');
-    }
+    _saveCompletedPickupsCount();
   }
 
   void listenToPickupQueue() {
