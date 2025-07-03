@@ -82,7 +82,7 @@ class ParentController extends GetxController {
       await FirebaseFirestore.instance.collection("addChild").doc().set({
         "userId": userId,
         "childName": nameController.text,
-        "school": schoolController.text,
+       // "school": schoolController.text,
         "class": selectedGrade.isNotEmpty ? selectedGrade[0] : '',
         "age": ageController.text,
         "gender": selectedGender.value,

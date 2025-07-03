@@ -73,16 +73,16 @@ class AddChildView extends StatelessWidget {
                       ),
                       SizedBox(height: screenHeight * 0.02),
                       /// School field
-                      TextFieldWidget(
-                        controller: parentController.schoolController,
-                        hintText: "School",
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please enter School";
-                          }
-                          return null;
-                        },
-                      ),
+                      // TextFieldWidget(
+                      //   controller: parentController.schoolController,
+                      //   hintText: "School",
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return "Please enter School";
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
                       SizedBox(height: screenHeight * 0.02),
                       /// Grade dropdown
                       MultiSelectGradeWidget(
