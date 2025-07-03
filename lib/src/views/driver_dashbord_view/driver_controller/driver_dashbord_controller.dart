@@ -73,6 +73,21 @@ class DriverController extends GetxController {
     print('------Fetched Driver Email: ${driverEmail.value}');
   }
 
+  void _sortAssignedChildren() {
+    assignedChildren.sort((a, b) {
+      int getOrder(Map<String, String> student) {
+        if (student['status'] == 'Onboard') return 0; // top
+        if (student['status'] == 'Not Picked Up') return 1; // middle
+        if (student['status'] == 'Dropped Off') return 2; // end
+        return 3;
+      }
+      int orderA = getOrder(a);
+      int orderB = getOrder(b);
+      if (orderA != orderB) return orderA.compareTo(orderB);
+      return (a['childName'] ?? '').compareTo(b['childName'] ?? '');
+    });
+  }
+
   Future<void> fetchAssignedChildren() async {
     try {
       await userIdController.getUserIdAndRole();
@@ -143,6 +158,7 @@ class DriverController extends GetxController {
           print('------Fetched child: $childName with status: $status');
         }
       }
+      _sortAssignedChildren();
     } catch (e) {
       print('------Error fetching assigned children: ${e.toString()}');
       assignedChildren.clear();
