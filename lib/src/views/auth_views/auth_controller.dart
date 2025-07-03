@@ -31,6 +31,18 @@ class AuthController extends GetxController {
   final profileAddressController = TextEditingController();
   final profilePhoneController = TextEditingController();
 
+  // Password visibility for login/signup
+  var isPasswordVisible = false.obs;
+  var isConfirmPasswordVisible = false.obs;
+
+  void togglePasswordVisibility() {
+    isPasswordVisible.value = !isPasswordVisible.value;
+  }
+
+  void toggleConfirmPasswordVisibility() {
+    isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
+  }
+
   void initProfileFields() async {
     isProfileLoading.value = true;
     await loadProfileData(

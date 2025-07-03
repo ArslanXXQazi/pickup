@@ -57,7 +57,7 @@ class TextFieldWidget extends StatelessWidget {
         TextFormField(
           controller: controller,
           readOnly: readOnly,
-        //  obscureText: passwordFieldController.isPasswordVisible.value,
+          obscureText: isPassword,
           keyboardType: keyboardType,
           validator: validator,
           onChanged: onChanged,

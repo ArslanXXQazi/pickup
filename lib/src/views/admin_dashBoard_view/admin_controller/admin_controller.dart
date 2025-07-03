@@ -44,6 +44,10 @@ class AdminController extends GetxController {
   // Map to track assigned grades globally
   final RxMap<String, List<String>> assignedGrades = <String, List<String>>{}.obs;
 
+  // Password visibility for add user
+  var isPasswordVisible = false.obs;
+  var isConfirmPasswordVisible = false.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -348,5 +352,13 @@ class AdminController extends GetxController {
     passwordController.clear();
     confirmController.clear();
     selectedRole.value = '';
+  }
+
+  void togglePasswordVisibility() {
+    isPasswordVisible.value = !isPasswordVisible.value;
+  }
+
+  void toggleConfirmPasswordVisibility() {
+    isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
   }
 }

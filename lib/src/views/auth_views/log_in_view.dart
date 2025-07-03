@@ -13,9 +13,7 @@ class LogInView extends StatelessWidget {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final screenWidth = MediaQuery.sizeOf(context).width;
 
-    /// Initialize text controllers for form fields
-    final TextEditingController passwordController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
+  
     final AuthController authController=Get.put(AuthController());
 
     return Scaffold(
@@ -77,10 +75,11 @@ class LogInView extends StatelessWidget {
                     ),
                     SizedBox(height: screenHeight * 0.02),
                     /// Email text field
-                    TextFieldWidget(
+                    Obx(() => TextFieldWidget(
                       controller: authController.passwordController,
                       hintText: "Password",
                       hintColor: Colors.blue,
+                      isPassword: !authController.isPasswordVisible.value,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return "Please enter a password";
@@ -90,7 +89,16 @@ class LogInView extends StatelessWidget {
                         }
                         return null;
                       },
-                    ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          authController.isPasswordVisible.value
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: AppColors.darkBlue,
+                        ),
+                        onPressed: authController.togglePasswordVisibility,
+                      ),
+                    )),
                     SizedBox(height: screenHeight * 0.02),
                   ],)),
                   /// Login button

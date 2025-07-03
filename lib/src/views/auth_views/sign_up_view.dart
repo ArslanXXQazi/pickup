@@ -75,9 +75,10 @@ class SignUpView extends StatelessWidget {
                     ),
                     SizedBox(height: screenHeight * 0.02),
                     /// Password text field
-                    TextFieldWidget(
+                    Obx(() => TextFieldWidget(
                       controller: authController.passwordController,
                       hintText: "Password",
+                      isPassword: !authController.isPasswordVisible.value,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return "Please enter a password";
@@ -87,12 +88,21 @@ class SignUpView extends StatelessWidget {
                         }
                         return null;
                       },
-                    ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          authController.isPasswordVisible.value
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: authController.togglePasswordVisibility,
+                      ),
+                    )),
                     SizedBox(height: screenHeight * 0.02),
                     /// Confirm Password text field
-                    TextFieldWidget(
+                    Obx(() => TextFieldWidget(
                       controller: authController.confirmController,
                       hintText: "Confirm Password",
+                      isPassword: !authController.isConfirmPasswordVisible.value,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return "Please enter confirm password";
@@ -102,7 +112,15 @@ class SignUpView extends StatelessWidget {
                         }
                         return null;
                       },
-                    ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          authController.isConfirmPasswordVisible.value
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: authController.toggleConfirmPasswordVisibility,
+                      ),
+                    )),
                     SizedBox(height: screenHeight * 0.02),
                     /// Role text field with dropdown icon
                     Obx(() => RoleTextFieldWidget(
