@@ -29,6 +29,7 @@ class _TeacherDashbordViewState extends State<TeacherDashbordView> {
     _loadLastNotificationId();
     teacherController.userIdController.getUserIdAndRole().then((_) {
       final teacherId = teacherController.userIdController.userId.value;
+      print('TeacherId for stream: ' + teacherId);
       if (teacherId.isNotEmpty) {
         _listenToTeacherNotifications(teacherId);
       }
@@ -54,6 +55,7 @@ class _TeacherDashbordViewState extends State<TeacherDashbordView> {
       for (var doc in snapshot.docs) {
         final docId = doc.id;
         final data = doc.data();
+        print('New teacher notification: ' + data.toString());
         if (!seenIds.contains(docId) && data != null && mounted) {
           String message = data['message'] ?? '';
           NotificationMessage.show(

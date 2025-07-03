@@ -143,7 +143,8 @@ class ParentController extends GetxController {
             .where('classes', arrayContains: className)
             .get();
         if (teacherQuery.docs.isNotEmpty) {
-          String teacherId = teacherQuery.docs.first.id;
+          var teacherDoc = teacherQuery.docs.first;
+          String teacherId = teacherDoc.data()['userId'] ?? teacherDoc.id;
           await FirebaseFirestore.instance.collection('teacherNotifications').add({
             'teacherId': teacherId,
             'childName': childName,
@@ -295,7 +296,8 @@ class ParentController extends GetxController {
             .where('classes', arrayContains: className)
             .get();
         if (teacherQuery.docs.isNotEmpty) {
-          String teacherId = teacherQuery.docs.first.id;
+          var teacherDoc = teacherQuery.docs.first;
+          String teacherId = teacherDoc.data()['userId'] ?? teacherDoc.id;
           await FirebaseFirestore.instance.collection('teacherNotifications').add({
             'teacherId': teacherId,
             'childName': childName,
