@@ -46,7 +46,7 @@ class _AllChildDetailState extends State<AllChildDetail> {
           stream: FirebaseFirestore.instance.collection('addChild').snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Apploader3();
+              return AppLoader2();
             }
             if (snapshot.hasError) {
               return Center(
@@ -122,30 +122,35 @@ class _AllChildDetailState extends State<AllChildDetail> {
                               var parentData = parentSnapshot.data!.data() as Map<String, dynamic>;
                               fatherName = parentData['name'] ?? 'N/A';
                             }
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                GreenText(
-                                  text: 'Father Name: $fatherName',
-                                  fontSize: fontSizeMedium,
-                                  fontWeight: FontWeight.w600,
-                                  textAlign: TextAlign.start,
-                                ),
-                                GreenText(
-                                  text: 'Grade: $className',
-                                  fontSize: fontSizeMedium,
-                                  fontWeight: FontWeight.w600,
-                                  textAlign: TextAlign.start,
-                                ),
-                                GreenText(
-                                  text: pickup == 'Self Pickup'
-                                      ? 'Pickup: Self Pickup'
-                                      : 'Pickup: Driver Pickup (${bus.isNotEmpty ? bus : 'No bus assigned'})',
-                                  fontSize: fontSizeMedium,
-                                  fontWeight: FontWeight.w600,
-                                  textAlign: TextAlign.start,
-                                ),
-                              ],
+                            return Padding(
+                              padding:  EdgeInsets.only(bottom: screenHeight*.01),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  GreenText(
+                                    text: 'Father Name: $fatherName',
+                                    fontSize: fontSizeMedium,
+                                    fontWeight: FontWeight.w600,
+                                    textAlign: TextAlign.start,
+                                  ),
+                                  Divider(color: Colors.blue,),
+                                  GreenText(
+                                    text: 'Grade: $className',
+                                    fontSize: fontSizeMedium,
+                                    fontWeight: FontWeight.w600,
+                                    textAlign: TextAlign.start,
+                                  ),
+                                  Divider(color: Colors.blue,),
+                                  GreenText(
+                                    text: pickup == 'Self Pickup'
+                                        ? 'Pickup: Self Pickup'
+                                        : 'Pickup: Driver Pickup (${bus.isNotEmpty ? bus : 'No bus assigned'})',
+                                    fontSize: fontSizeMedium,
+                                    fontWeight: FontWeight.w600,
+                                    textAlign: TextAlign.start,
+                                  ),
+                                ],
+                              ),
                             );
                           },
                         ),
