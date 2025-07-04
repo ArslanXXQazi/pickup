@@ -6,7 +6,7 @@ import '../parent_controller.dart';
 import '../../../utills/app_loader.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ViewAllChild extends StatelessWidget {
+class ViewAllChild extends StatelessWidget with WidgetsBindingObserver {
   const ViewAllChild({super.key});
 
   @override
@@ -15,6 +15,9 @@ class ViewAllChild extends StatelessWidget {
     userIdController.getChildStatusStream();
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+
+    // Add observer for app lifecycle
+    WidgetsBinding.instance.addObserver(this);
 
     return Scaffold(
       appBar: AppBar(
@@ -44,13 +47,15 @@ class ViewAllChild extends StatelessWidget {
             children: [
               Expanded(
                 child: Obx(() {
+                  print('ViewAllChild: childNames = \\${userIdController.childNames}');
                   int minLength = [
                     userIdController.childNames.length,
                     userIdController.childIds.length,
                     userIdController.pickup.length,
-                    userIdController.buses.length,
+                    userIdController.childBuses.length,
                     userIdController.classNos.length,
                   ].reduce((a, b) => a < b ? a : b);
+                  print('ViewAllChild: minLength = \\${minLength}, childNames = \\${userIdController.childNames}, childIds = \\${userIdController.childIds}, pickup = \\${userIdController.pickup}, childBuses = \\${userIdController.childBuses}, classNos = \\${userIdController.classNos}');
                   if (minLength == 0) {
                     return Center(
                       child: GreenText(
@@ -64,10 +69,13 @@ class ViewAllChild extends StatelessWidget {
                   return ListView.builder(
                     itemCount: minLength,
                     itemBuilder: (context, index) {
+                      String childId = userIdController.childIds[index];
+                      ParentController parentController = Get.find<ParentController>();
+                      parentController.checkAndResetStatus(childId);
                       if (index >= userIdController.childNames.length ||
                           index >= userIdController.childIds.length ||
                           index >= userIdController.pickup.length ||
-                          index >= userIdController.buses.length ||
+                          index >= userIdController.childBuses.length ||
                           index >= userIdController.classNos.length) {
                         return SizedBox();
                       }
@@ -122,34 +130,52 @@ class ViewAllChild extends StatelessWidget {
                               Obx(() {
                                 if (index >= userIdController.pickup.length) return SizedBox();
                                 if (userIdController.pickup[index] == "Self Pickup") {
-                                  ParentController parentController = Get.find<ParentController>();
-                                  String childId = userIdController.childIds[index];
                                   var status = userIdController.childStatusList.firstWhereOrNull((e) => e['childId'] == childId);
                                   bool parentNotified = status?['parentNotified'] ?? false;
                                   bool pickedUp = status?['pickedUp'] ?? false;
+                                  bool parentConfirmedPickup = status?['parentConfirmedPickup'] ?? false;
                                   if (parentController.childLoading[childId] == true) {
                                     return AppLoader2();
+                                  }
+                                  if (pickedUp && !parentConfirmedPickup && parentController.confirmLoading[childId] == true) {
+                                    return YellowButton(
+                                      onTap: null,
+                                      text: "Confirm Pickup...",
+                                      borderRadius: 20,
+                                      color: Colors.green,
+                                      textColor: Colors.white,
+                                    );
                                   }
                                   String btnText = "I've Arrived - Notify School";
                                   Color btnColor = AppColors.yellowColor;
                                   bool btnEnabled = true;
+                                  Color btnTextColor = Colors.black;
                                   if (parentNotified && !pickedUp) {
                                     btnText = "Waiting";
                                     btnColor = Colors.grey.shade400;
                                     btnEnabled = false;
-                                  } else if (pickedUp) {
+                                  } else if (pickedUp && !parentConfirmedPickup) {
+                                    btnText = "Confirm Pickup";
+                                    btnColor = Colors.green;
+                                    btnEnabled = true;
+                                    btnTextColor = Colors.white;
+                                  } else if (parentConfirmedPickup) {
                                     btnText = "Picked Up";
                                     btnColor = Colors.green;
                                     btnEnabled = false;
                                   }
                                   return YellowButton(
                                     onTap: btnEnabled ? () {
-                                      parentController.notifySchool(childId);
+                                      if (pickedUp && !parentConfirmedPickup) {
+                                        parentController.confirmParentPickup(childId);
+                                      } else {
+                                        parentController.notifySchool(childId);
+                                      }
                                     } : null,
                                     text: btnText,
                                     borderRadius: 20,
                                     color: btnColor,
-                                    textColor: btnEnabled ? Colors.black : Colors.white,
+                                    textColor: btnTextColor,
                                   );
                                 } else {
                                   return Column(
@@ -170,7 +196,7 @@ class ViewAllChild extends StatelessWidget {
                                               children: [
                                                 GreenText(
                                                   text:
-                                                  "Assigned Bus : ${userIdController.buses[index] == 'N/A' ? 'None' : userIdController.buses[index]}",
+                                                  "Assigned Bus : ${userIdController.childBuses[index] == 'N/A' ? 'None' : userIdController.childBuses[index]}",
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w600,
                                                 ),
@@ -181,7 +207,6 @@ class ViewAllChild extends StatelessWidget {
                                             flex: 30,
                                             child: YellowButton(
                                               onTap: () async {
-                                                String childId = userIdController.childIds[index];
                                                 var doc = await FirebaseFirestore.instance.collection('addChild').doc(childId).get();
                                                 if (doc.exists && doc.data()!.containsKey('assignedDriverId') && (doc.data()!['assignedDriverId'] ?? '').toString().isNotEmpty) {
                                                   String assignedDriverId = doc.data()!['assignedDriverId'];
@@ -217,5 +242,14 @@ class ViewAllChild extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final UserId userIdController = Get.find<UserId>();
+      userIdController.getChildData();
+      userIdController.getChildStatusStream();
+    }
   }
 }

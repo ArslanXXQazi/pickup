@@ -19,7 +19,7 @@ class ParentDashbord extends StatefulWidget {
   State<ParentDashbord> createState() => _ParentDashbordState();
 }
 
-class _ParentDashbordState extends State<ParentDashbord> {
+class _ParentDashbordState extends State<ParentDashbord> with WidgetsBindingObserver {
   final UserId userIdController = Get.find<UserId>();
   final AuthController authController = Get.put(AuthController());
   final ParentController parentController = Get.find<ParentController>();
@@ -31,6 +31,7 @@ class _ParentDashbordState extends State<ParentDashbord> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadLastNotificationId();
     userIdController.getUserIdAndRole().then((_) {
       if (userIdController.userId.value.isNotEmpty) {
@@ -115,9 +116,18 @@ class _ParentDashbordState extends State<ParentDashbord> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _notificationSubscription?.cancel();
     _pickupNotificationSubscription?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      userIdController.getChildData();
+      userIdController.getChildStatusStream();
+    }
   }
 
   @override
@@ -190,6 +200,7 @@ class _ParentDashbordState extends State<ParentDashbord> {
                 ),
                 SizedBox(height: screenHeight * 0.02),
                 Obx(() {
+                  print('ParentDashbord: childNames = \\${userIdController.childNames}');
                   if (userIdController.userId.value.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -227,14 +238,23 @@ class _ParentDashbordState extends State<ParentDashbord> {
                           userIdController.childNames.length,
                           userIdController.childIds.length,
                           userIdController.pickup.length,
-                          userIdController.buses.length,
+                          userIdController.childBuses.length,
                           userIdController.classNos.length,
                         ].reduce((a, b) => a < b ? a : b),
                         itemBuilder: (context, index) {
+                          String childId = userIdController.childIds[index];
+                          parentController.checkAndResetStatus(childId);
+                          print('ParentDashbord: itemCount = \\${[
+                            userIdController.childNames.length,
+                            userIdController.childIds.length,
+                            userIdController.pickup.length,
+                            userIdController.childBuses.length,
+                            userIdController.classNos.length,
+                          ].reduce((a, b) => a < b ? a : b)}, childNames = \\${userIdController.childNames}, childIds = \\${userIdController.childIds}, pickup = \\${userIdController.pickup}, childBuses = \\${userIdController.childBuses}, classNos = \\${userIdController.classNos}');
                           if (index >= userIdController.childNames.length ||
                               index >= userIdController.childIds.length ||
                               index >= userIdController.pickup.length ||
-                              index >= userIdController.buses.length ||
+                              index >= userIdController.childBuses.length ||
                               index >= userIdController.classNos.length) {
                             return SizedBox();
                           }
@@ -294,7 +314,6 @@ class _ParentDashbordState extends State<ParentDashbord> {
                                   Obx(() {
                                     if (index >= userIdController.pickup.length) return SizedBox();
                                     if (userIdController.pickup[index] == "Self Pickup") {
-                                      String childId = userIdController.childIds[index];
                                       var status = userIdController.childStatusList.firstWhereOrNull((e) => e['childId'] == childId);
                                       bool parentNotified = status?['parentNotified'] ?? false;
                                       bool pickedUp = status?['pickedUp'] ?? false;
@@ -364,7 +383,7 @@ class _ParentDashbordState extends State<ParentDashbord> {
                                                   children: [
                                                     GreenText(
                                                       text:
-                                                      "Assigned Bus : ${userIdController.buses[index] == 'N/A' ? 'None' : userIdController.buses[index]}",
+                                                      "Assigned Bus : ${userIdController.childBuses[index] == 'N/A' ? 'None' : userIdController.childBuses[index]}",
                                                       fontSize: 16,
                                                       fontWeight: FontWeight.w600,
                                                     ),

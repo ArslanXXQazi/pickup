@@ -282,6 +282,7 @@ class ParentController extends GetxController {
       confirmLoading[childId] = true;
       await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
         "parentConfirmedPickup": true,
+        "resetAt": DateTime.now().add(Duration(hours: 1)).toIso8601String(),
       });
       // Fetch child data for notification
       var doc = await FirebaseFirestore.instance.collection("addChild").doc(childId).get();
@@ -312,18 +313,6 @@ class ParentController extends GetxController {
         backGroundColor: Colors.green,
         textColor: Colors.white,
       );
-      // 1 hour baad reset
-      Future.delayed(Duration(hours: 1), () async {
-        await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
-          "parentNotified": false,
-          "pickedUp": false,
-          "parentConfirmedPickup": false,
-        });
-        // Also reset teacher's completedPickupsCount after 1 hour
-        try {
-          Get.find<TeacherController>().resetHistoryAfterDelay();
-        } catch (e) {}
-      });
     } catch (e) {
       NotificationMessage.show(
         title: "Error",
@@ -333,6 +322,23 @@ class ParentController extends GetxController {
       );
     } finally {
       confirmLoading[childId] = false;
+    }
+  }
+
+  // Add a method to check and reset status if needed
+  Future<void> checkAndResetStatus(String childId) async {
+    var doc = await FirebaseFirestore.instance.collection("addChild").doc(childId).get();
+    var data = doc.data();
+    if (data != null && data['resetAt'] != null) {
+      DateTime resetAt = DateTime.tryParse(data['resetAt']) ?? DateTime.now();
+      if (DateTime.now().isAfter(resetAt)) {
+        await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
+          "parentNotified": false,
+          "pickedUp": false,
+          "parentConfirmedPickup": false,
+          "resetAt": null,
+        });
+      }
     }
   }
 }

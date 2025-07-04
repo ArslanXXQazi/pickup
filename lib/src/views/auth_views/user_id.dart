@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'dart:async';
 
 class UserId extends GetxController {
   var userId = ''.obs;
@@ -16,6 +17,8 @@ class UserId extends GetxController {
   var driverCount = 0.obs; // Added for Driver count
   var teacherCount = 0.obs; // Added for Teacher count
   var childStatusList = <Map<String, dynamic>>[].obs;
+  var childBuses = <String>[].obs; // For children buses only
+  StreamSubscription? _childStatusSubscription;
 
   String get userRole => role.value; // Getter for userRole
 
@@ -41,32 +44,32 @@ class UserId extends GetxController {
   }
 
   Future<void> getChildData() async {
-    try {
-      childNames.clear();
-      classNos.clear();
-      pickup.clear();
-      buses.clear();
-      childIds.clear();
+    print('getChildData called');
+    print('childNames before clear: \\${childNames.length}');
+    childNames.clear();
+    classNos.clear();
+    pickup.clear();
+    childBuses.clear(); // Use this for children
+    childIds.clear();
 
-      String userIdValue = userId.value;
-      if (userIdValue.isNotEmpty) {
-        var querySnapshot = await FirebaseFirestore.instance
-            .collection('addChild')
-            .where('userId', isEqualTo: userIdValue)
-            .get();
+    String userIdValue = userId.value;
+    if (userIdValue.isNotEmpty) {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('addChild')
+          .where('userId', isEqualTo: userIdValue)
+          .get();
 
-        for (var doc in querySnapshot.docs) {
-          var data = doc.data();
-          childNames.add(data['childName'] ?? 'N/A');
-          classNos.add(data['class'] ?? 'N/A');
-          pickup.add(data['pickup'] ?? 'N/A');
-          buses.add(data['bus'] ?? 'N/A');
-          childIds.add(doc.id);
-        }
+      for (var doc in querySnapshot.docs) {
+        var data = doc.data();
+        childNames.add(data['childName'] ?? 'N/A');
+        classNos.add(data['class'] ?? 'N/A');
+        pickup.add(data['pickup'] ?? 'N/A');
+        childBuses.add(data['bus'] ?? 'N/A'); // Use childBuses
+        childIds.add(doc.id);
       }
-    } catch (e) {
-      print('Error fetching child data: $e');
+      print('Fetched childNames: \\${childNames}');
     }
+    print('childNames after fetch: \\${childNames.length}');
   }
 
   Future<void> fetchRoleCounts() async {
@@ -106,8 +109,9 @@ class UserId extends GetxController {
 
   void getChildStatusStream() {
     String userIdValue = userId.value;
+    _childStatusSubscription?.cancel();
     if (userIdValue.isNotEmpty) {
-      FirebaseFirestore.instance
+      _childStatusSubscription = FirebaseFirestore.instance
           .collection('addChild')
           .where('userId', isEqualTo: userIdValue)
           .snapshots()
@@ -124,5 +128,11 @@ class UserId extends GetxController {
         }
       });
     }
+  }
+
+  @override
+  void onClose() {
+    _childStatusSubscription?.cancel();
+    super.onClose();
   }
 }

@@ -144,157 +144,159 @@ class _DriverDashBordViewState extends State<DriverDashBordView> {
           Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: screenWidth*.02),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: screenHeight * 0.01),
-                  GreenText(
-                    text: "Driver Dashboard",
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-                  Container(
-                    height: screenHeight * 0.35,
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: basePadding * 0.9,
-                      vertical: basePadding * 0.9,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: screenHeight * 0.01),
+                    GreenText(
+                      text: "Driver Dashboard",
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(screenWidth * 0.04),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: screenWidth * 0.015,
-                          offset: Offset(0, screenWidth * 0.005),
-                        ),
-                      ],
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          GreenText(
-                            text: "Assigned Students",
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                    SizedBox(height: screenHeight * 0.02),
+                    Container(
+                      height: screenHeight * 0.35,
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: basePadding * 0.9,
+                        vertical: basePadding * 0.9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(screenWidth * 0.04),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: screenWidth * 0.015,
+                            offset: Offset(0, screenWidth * 0.005),
                           ),
-                          SizedBox(height: screenHeight * 0.015),
-                          Obx(() {
-                            if (controller.isLoading.value) {
-                              return Center(
-                                child: AppLoader2(),
-                              );
-                            }
-                            if (controller.assignedChildren.isEmpty) {
-                              return Text(
-                                "No students assigned",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              );
-                            }
-                            return ListView.builder(
-                              shrinkWrap: true,
-                              padding: EdgeInsets.zero,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: controller.assignedChildren.length,
-                              itemBuilder: (context, index) {
-                                var child = controller.assignedChildren[index];
-                                return StudentRow(
-                                  ontap: () {
-                                    showStatusDialog(
-                                      context,
-                                      controller,
-                                      child['docId']!,
-                                      child['childName']!,
-                                    );
-                                  },
-                                  studentName: child['childName']!,
-                                  buttonText: child['status'],
-                                  buttonColor: child['status'] == 'Onboard'
-                                      ? Colors.blue
-                                      : child['status'] == 'Dropped Off'
-                                      ? AppColors.yellowColor
-                                      : Colors.blue.shade100,
-                                  textColor: child['status'] == 'Onboard'
-                                      ? Colors.white
-                                      : AppColors.darkBlue,
-                                  isLoading: controller.childStatusLoading[child['docId']] == true,
-                                );
-                              },
-                            );
-                          }),
                         ],
                       ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GreenText(
+                              text: "Assigned Students",
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            SizedBox(height: screenHeight * 0.015),
+                            Obx(() {
+                              if (controller.isLoading.value) {
+                                return Center(
+                                  child: AppLoader2(),
+                                );
+                              }
+                              if (controller.assignedChildren.isEmpty) {
+                                return Text(
+                                  "No students assigned",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              }
+                              return ListView.builder(
+                                shrinkWrap: true,
+                                padding: EdgeInsets.zero,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: controller.assignedChildren.length,
+                                itemBuilder: (context, index) {
+                                  var child = controller.assignedChildren[index];
+                                  return StudentRow(
+                                    ontap: () {
+                                      showStatusDialog(
+                                        context,
+                                        controller,
+                                        child['docId']!,
+                                        child['childName']!,
+                                      );
+                                    },
+                                    studentName: child['childName']!,
+                                    buttonText: child['status'],
+                                    buttonColor: child['status'] == 'Onboard'
+                                        ? Colors.blue
+                                        : child['status'] == 'Dropped Off'
+                                        ? AppColors.yellowColor
+                                        : Colors.blue.shade100,
+                                    textColor: child['status'] == 'Onboard'
+                                        ? Colors.white
+                                        : AppColors.darkBlue,
+                                    isLoading: controller.childStatusLoading[child['docId']] == true,
+                                  );
+                                },
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: screenHeight * 0.02),
-                  GreenText(
-                    text: "Live Location",
-                    fontWeight: FontWeight.w700,
-                  ),
-                  SizedBox(height: screenHeight * 0.01),
-                  Container(
-                    height: screenHeight * 0.25,
-                    padding: EdgeInsets.zero,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(screenWidth * 0.04),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: screenWidth * 0.015,
-                          offset: Offset(0, screenWidth * 0.005),
+                    SizedBox(height: screenHeight * 0.02),
+                    GreenText(
+                      text: "Live Location",
+                      fontWeight: FontWeight.w700,
+                    ),
+                    SizedBox(height: screenHeight * 0.01),
+                    Container(
+                      height: screenHeight * 0.25,
+                      padding: EdgeInsets.zero,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(screenWidth * 0.04),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: screenWidth * 0.015,
+                            offset: Offset(0, screenWidth * 0.005),
+                          ),
+                        ],
+                      ),
+                      child: Obx(() {
+                        if (mapController.isLoading.value) {
+                          return Center(child: AppLoader2());
+                        }
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: GoogleMap(
+                            initialCameraPosition: CameraPosition(
+                              target: LatLng(mapController.latitude.value, mapController.longitude.value),
+                              zoom: 16,
+                            ),
+                            myLocationEnabled: false,
+                            myLocationButtonEnabled: true,
+                            trafficEnabled: true,
+                            markers: mapController.allMarkers,
+                            polylines: mapController.polylines.value,
+                          ),
+                        );
+                      }),
+                    ),
+                    SizedBox(width: screenWidth * 0.02),
+                    Obx(() => Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GreenText(
+                          text: "Share Location",
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch(
+                            value: controller.isLocationShared.value,
+                            onChanged: (value) {
+                              controller.toggleLocationSharing(value);
+                            },
+                            activeColor: Colors.white,
+                            activeTrackColor: Colors.blue,
+                          ),
                         ),
                       ],
-                    ),
-                    child: Obx(() {
-                      if (mapController.isLoading.value) {
-                        return Center(child: AppLoader2());
-                      }
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: LatLng(mapController.latitude.value, mapController.longitude.value),
-                            zoom: 16,
-                          ),
-                          myLocationEnabled: false,
-                          myLocationButtonEnabled: true,
-                          trafficEnabled: true,
-                          markers: mapController.allMarkers,
-                          polylines: mapController.polylines.value,
-                        ),
-                      );
-                    }),
-                  ),
-                  SizedBox(width: screenWidth * 0.02),
-                  Obx(() => Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GreenText(
-                        text: "Share Location",
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      Transform.scale(
-                        scale: 0.8,
-                        child: Switch(
-                          value: controller.isLocationShared.value,
-                          onChanged: (value) {
-                            controller.toggleLocationSharing(value);
-                          },
-                          activeColor: Colors.white,
-                          activeTrackColor: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  )),
-                ],
+                    )),
+                  ],
+                ),
               ),
             ),
           ),

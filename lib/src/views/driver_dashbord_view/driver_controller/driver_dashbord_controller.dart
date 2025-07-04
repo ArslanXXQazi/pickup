@@ -128,8 +128,8 @@ class DriverController extends GetxController {
       } else {
         for (var doc in childDocs.docs) {
           var data = doc.data();
-          String childName = data['childName'] ?? "N/A";
-          String status = data['status'] ?? "Not Picked Up";
+          String childName = data?['childName'] ?? "N/A";
+          String status = data?['status'] ?? "Not Picked Up";
 
           // Status/marker time-based reset logic
           if (status == 'Dropped Off' && data.containsKey('dropMarker') && data['dropMarker'] != null) {
@@ -146,6 +146,21 @@ class DriverController extends GetxController {
                 'dropMarker': null,
               });
               print('------Auto-reset: $childName status changed from Dropped Off to Not Picked Up after 60 seconds (app restart safe)');
+              status = 'Not Picked Up';
+            }
+          }
+
+          // Check and reset driverResetAt if needed
+          if (data != null && data['driverResetAt'] != null) {
+            DateTime driverResetAt = DateTime.tryParse(data['driverResetAt']) ?? DateTime.now();
+            if (DateTime.now().isAfter(driverResetAt)) {
+              await FirebaseFirestore.instance.collection('addChild').doc(doc.id).update({
+                'status': 'Not Picked Up',
+                'updatedAt': Timestamp.now(),
+                'dropMarker': null,
+                'driverResetAt': null,
+                'droppedOffAt': null,
+              });
               status = 'Not Picked Up';
             }
           }
@@ -243,17 +258,12 @@ class DriverController extends GetxController {
             'lng': dropLng,
             'droppedAt': DateTime.now().toIso8601String(),
             'childName': childName,
-          }
-        });
-        Future.delayed(Duration(hours: 1), () async {
-          await FirebaseFirestore.instance.collection("addChild").doc(docId).update({
-            'status': 'Not Picked Up',
-            'updatedAt': Timestamp.now(),
-            'dropMarker': null, // Remove dropMarker after 1 hour
-          });
-          fetchAssignedChildren();
+          },
+          'driverResetAt': DateTime.now().add(Duration(hours: 1)).toIso8601String(),
+          'droppedOffAt': DateTime.now().toIso8601String(),
         });
       }
+
       if (onComplete != null) onComplete();
     } catch (e) {
       print('------Error updating child status: ${e.toString()}');

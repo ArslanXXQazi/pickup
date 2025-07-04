@@ -33,9 +33,9 @@ class TeacherController extends GetxController {
   Future<void> _loadCompletedPickupsCount() async {
     final prefs = await SharedPreferences.getInstance();
     int count = prefs.getInt('completedPickupsCount') ?? 0;
-    String? lastUpdateStr = prefs.getString('completedPickupsLastUpdate');
+    String? lastUpdateStr = prefs.getString('historyResetAt');
     DateTime? lastUpdate = lastUpdateStr != null ? DateTime.tryParse(lastUpdateStr) : null;
-    if (lastUpdate != null && DateTime.now().difference(lastUpdate) < Duration(hours: 1)) {
+    if (lastUpdate != null && DateTime.now().isBefore(lastUpdate)) {
       completedPickupsCount.value = count;
     } else {
       completedPickupsCount.value = 0;
@@ -45,7 +45,7 @@ class TeacherController extends GetxController {
   Future<void> _saveCompletedPickupsCount() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('completedPickupsCount', completedPickupsCount.value);
-    await prefs.setString('completedPickupsLastUpdate', DateTime.now().toIso8601String());
+    await prefs.setString('historyResetAt', DateTime.now().add(Duration(hours: 1)).toIso8601String());
   }
 
   Future<void> fetchTeacherData() async {
@@ -155,20 +155,12 @@ class TeacherController extends GetxController {
       }
       completedPickupsCount.value++;
       _saveCompletedPickupsCount();
-      resetHistoryAfterDelay();
       await fetchPickupQueueStudents(); // Refresh the queue
     } catch (e) {
       print('Error marking pickup: $e');
     } finally {
       loadingPickupChildId.value = '';
     }
-  }
-
-  // 1 hour baad completedPickupsCount ko 0 karo
-  void resetHistoryAfterDelay() async {
-    await Future.delayed(Duration(hours: 1));
-    completedPickupsCount.value = 0;
-    _saveCompletedPickupsCount();
   }
 
   void listenToPickupQueue() {
