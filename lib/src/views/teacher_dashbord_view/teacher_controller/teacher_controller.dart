@@ -45,7 +45,7 @@ class TeacherController extends GetxController {
   Future<void> _saveCompletedPickupsCount() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('completedPickupsCount', completedPickupsCount.value);
-    await prefs.setString('historyResetAt', DateTime.now().add(Duration(hours: 1)).toIso8601String());
+    await prefs.setString('historyResetAt', DateTime.now().add(Duration(minutes: 10)).toIso8601String());
   }
 
   Future<void> fetchTeacherData() async {

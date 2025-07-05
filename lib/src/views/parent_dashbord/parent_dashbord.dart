@@ -234,13 +234,13 @@ class _ParentDashbordState extends State<ParentDashbord> with WidgetsBindingObse
                         shrinkWrap: true,
                         padding: EdgeInsets.zero,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: [
+                        itemCount: min(3, [
                           userIdController.childNames.length,
                           userIdController.childIds.length,
                           userIdController.pickup.length,
                           userIdController.childBuses.length,
                           userIdController.classNos.length,
-                        ].reduce((a, b) => a < b ? a : b),
+                        ].reduce((a, b) => a < b ? a : b)),
                         itemBuilder: (context, index) {
                           String childId = userIdController.childIds[index];
                           parentController.checkAndResetStatus(childId);

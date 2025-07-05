@@ -282,7 +282,7 @@ class ParentController extends GetxController {
       confirmLoading[childId] = true;
       await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
         "parentConfirmedPickup": true,
-        "resetAt": DateTime.now().add(Duration(hours: 1)).toIso8601String(),
+        "resetAt": DateTime.now().add(Duration(minutes: 10)).toIso8601String(),
       });
       // Fetch child data for notification
       var doc = await FirebaseFirestore.instance.collection("addChild").doc(childId).get();

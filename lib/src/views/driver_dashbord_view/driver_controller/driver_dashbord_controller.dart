@@ -259,7 +259,7 @@ class DriverController extends GetxController {
             'droppedAt': DateTime.now().toIso8601String(),
             'childName': childName,
           },
-          'driverResetAt': DateTime.now().add(Duration(hours: 1)).toIso8601String(),
+          'driverResetAt': DateTime.now().add(Duration(minutes: 10)).toIso8601String(),
           'droppedOffAt': DateTime.now().toIso8601String(),
         });
       }
