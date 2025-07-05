@@ -53,12 +53,13 @@ class _TeacherDashbordViewState extends State<TeacherDashbordView> {
       List<String> seenIds = prefs.getStringList('seenTeacherNotificationIds') ?? [];
       bool updated = false;
       final oneMinuteAgo = DateTime.now().subtract(Duration(minutes: 1));
+      final threeMinutesAgo = DateTime.now().subtract(Duration(minutes: 3));
       for (var doc in snapshot.docs) {
         final docId = doc.id;
         final data = doc.data();
         if (data == null) continue;
         final notifTime = DateTime.tryParse(data['timestamp'] ?? '');
-        if (notifTime == null || notifTime.isBefore(oneMinuteAgo)) continue;
+        if (notifTime == null || notifTime.isBefore(threeMinutesAgo)) continue;
         print('New teacher notification: ' + data.toString());
         if (!seenIds.contains(docId) && mounted) {
           String message = data['message'] ?? '';

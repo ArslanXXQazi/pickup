@@ -72,7 +72,9 @@ class _PickupNotificationState extends State<PickupNotification> {
                   notifTime = DateTime.tryParse(ts);
                 }
                 if (notifTime == null) return false;
-                return notifTime.isAfter(DateTime.now().subtract(Duration(minutes: 1)));
+                final now = DateTime.now();
+                // Sirf 1 minute ke andar ke notifications, na zyada purane, na future ke
+                return notifTime.isAfter(now.subtract(Duration(minutes: 1))) && notifTime.isBefore(now.add(Duration(minutes: 1)));
               })
               .toList();
           print('UI notifications: ' + notifications.toString());
