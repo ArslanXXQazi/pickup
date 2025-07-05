@@ -129,7 +129,9 @@ class ParentController extends GetxController {
       childLoading[childId] = true;
       await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
         "parentNotified": true,
+        "status": "At school",
       });
+      print('notifySchool: Firestore update done for $childId');
       // Fetch child data for notification
       var doc = await FirebaseFirestore.instance.collection("addChild").doc(childId).get();
       var data = doc.data();
@@ -160,6 +162,8 @@ class ParentController extends GetxController {
         backGroundColor: Colors.green,
         textColor: Colors.white,
       );
+      Get.find<UserId>().getChildStatusStream(); // Force real-time UI update
+      print('notifySchool: getChildStatusStream called');
     } catch (e) {
       NotificationMessage.show(
         title: "Error",
@@ -283,7 +287,9 @@ class ParentController extends GetxController {
       await FirebaseFirestore.instance.collection("addChild").doc(childId).update({
         "parentConfirmedPickup": true,
         "resetAt": DateTime.now().add(Duration(minutes: 10)).toIso8601String(),
+        "status": "Picked Up",
       });
+      print('confirmParentPickup: Firestore update done for $childId');
       // Fetch child data for notification
       var doc = await FirebaseFirestore.instance.collection("addChild").doc(childId).get();
       var data = doc.data();
@@ -313,6 +319,8 @@ class ParentController extends GetxController {
         backGroundColor: Colors.green,
         textColor: Colors.white,
       );
+      Get.find<UserId>().getChildStatusStream(); // Force real-time UI update
+      print('confirmParentPickup: getChildStatusStream called');
     } catch (e) {
       NotificationMessage.show(
         title: "Error",

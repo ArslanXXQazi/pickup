@@ -124,7 +124,9 @@ class UserId extends GetxController {
             'parentNotified': data['parentNotified'] ?? false,
             'pickedUp': data['pickedUp'] ?? false,
             'parentConfirmedPickup': data['parentConfirmedPickup'] ?? false,
+            'status': data['status'] ?? 'Not Picked Up',
           });
+          print('getChildStatusStream: childStatusList updated: $childStatusList');
         }
       });
     }

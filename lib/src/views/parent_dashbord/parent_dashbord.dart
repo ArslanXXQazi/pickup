@@ -300,13 +300,29 @@ class _ParentDashbordState extends State<ParentDashbord> with WidgetsBindingObse
                                       ),
                                       const Spacer(),
                                       Expanded(
-                                        child: YellowButton(
-                                          text: "At school",
-                                          borderRadius: 10,
-                                          height: 40,
-                                          fontSize: 12,
-                                          color: Colors.blue.shade50,
-                                        ),
+                                        child: Obx(() {
+                                          print('UI: childStatusList = \\${userIdController.childStatusList}');
+                                          var status = userIdController.childStatusList.firstWhereOrNull((e) => e['childId'] == childId);
+                                          String statusField = status?['status'] ?? 'At school';
+                                          String statusText = "At school";
+                                          if (userIdController.pickup[index] == "Self Pickup") {
+                                            if (status?['parentConfirmedPickup'] == true) statusText = "Picked Up";
+                                            else statusText = "At school";
+                                          } else {
+                                            if (statusField == 'Onboard') statusText = "Onboard";
+                                            else if (statusField == 'Dropped Off') statusText = "Dropped Off";
+                                            else statusText = "At school";
+                                          }
+                                          return YellowButton(
+                                            text: statusText,
+                                            borderRadius: 10,
+                                            height: 40,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.blue.shade50,
+                                            width: screenWidth * 0.28 > 120 ? screenWidth * 0.28 : 120,
+                                          );
+                                        }),
                                       ),
                                     ],
                                   ),

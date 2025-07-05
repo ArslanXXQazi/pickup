@@ -263,6 +263,7 @@ class DriverController extends GetxController {
           'droppedOffAt': DateTime.now().toIso8601String(),
         });
       }
+      Get.find<UserId>().getChildStatusStream(); // Force real-time UI update
 
       if (onComplete != null) onComplete();
     } catch (e) {
