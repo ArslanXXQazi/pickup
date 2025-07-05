@@ -161,7 +161,7 @@ class DriverController extends GetxController {
             }
           }
 
-          // Check and reset driverResetAt if needed
+          // Check and reset driverResetAt if needed (10 min auto reset, marker bhi remove ho)
           if (data != null && data['driverResetAt'] != null) {
             dynamic driverResetAtRaw = data['driverResetAt'];
             DateTime driverResetAt;
@@ -176,7 +176,7 @@ class DriverController extends GetxController {
               await FirebaseFirestore.instance.collection('addChild').doc(doc.id).update({
                 'status': 'Not Picked Up',
                 'updatedAt': Timestamp.now(),
-                'dropMarker': null,
+                'dropMarker': null, // Remove yellow marker
                 'driverResetAt': null,
                 'droppedOffAt': null,
               });
