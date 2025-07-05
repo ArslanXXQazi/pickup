@@ -34,4 +34,31 @@ class DriverDashboardController {
       print('Error fetching assigned children: $e');
     }
   }
+
+  /// Fetch driver notifications for the current user (last 1 minute)
+  Future<void> fetchDriverNotifications(String driverId) async {
+    try {
+      final oneMinuteAgo = DateTime.now().subtract(Duration(minutes: 1));
+      // Delete notifications older than 1 minute
+      final oldSnapshot = await FirebaseFirestore.instance
+          .collection('driverNotifications')
+          .where('driverId', isEqualTo: driverId)
+          .where('timestamp', isLessThan: oneMinuteAgo.toIso8601String())
+          .get();
+      for (var doc in oldSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      // Fetch only notifications from the last 1 minute
+      final snapshot = await FirebaseFirestore.instance
+          .collection('driverNotifications')
+          .where('driverId', isEqualTo: driverId)
+          .where('timestamp', isGreaterThan: oneMinuteAgo.toIso8601String())
+          .orderBy('timestamp', descending: true)
+          .get();
+      // You can update your notification list here if needed
+      // driverNotificationsList.value = snapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      print('Error fetching driver notifications: $e');
+    }
+  }
 } 

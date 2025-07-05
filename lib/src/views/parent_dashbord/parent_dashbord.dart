@@ -86,13 +86,34 @@ class _ParentDashbordState extends State<ParentDashbord> with WidgetsBindingObse
         .collection('pickupNotifications')
         .where('userId', isEqualTo: userId)
         .orderBy('timestamp', descending: true)
-        .limit(20)
         .snapshots()
         .listen((snapshot) async {
       final prefs = await SharedPreferences.getInstance();
       List<String> seenIds = prefs.getStringList('seenParentNotificationIds') ?? [];
       bool updated = false;
-      for (var doc in snapshot.docs) {
+      final oneMinuteAgo = DateTime.now().subtract(Duration(minutes: 1));
+      print('Snapshot docs (parent stream): ' + snapshot.docs.map((doc) => doc.data().toString()).join('\n'));
+      // Delete notifications older than 1 minute from Firestore
+      final oldDocs = snapshot.docs.where((doc) {
+        final data = doc.data();
+        if (data == null || data['timestamp'] == null) return false;
+        final notifTime = DateTime.tryParse(data['timestamp']);
+        if (notifTime == null) return false;
+        return notifTime.isBefore(oneMinuteAgo);
+      }).toList();
+      for (var doc in oldDocs) {
+        await doc.reference.delete();
+      }
+      // Only show notifications from the last 1 minute (teacher + driver)
+      final filteredDocs = snapshot.docs.where((doc) {
+        final data = doc.data();
+        if (data == null || data['timestamp'] == null) return false;
+        final notifTime = DateTime.tryParse(data['timestamp']);
+        if (notifTime == null) return false;
+        return notifTime.isAfter(oneMinuteAgo);
+      }).toList();
+      print('Filtered notifications (parent stream): ' + filteredDocs.map((doc) => doc.data().toString()).join('\n'));
+      for (var doc in filteredDocs) {
         final docId = doc.id;
         final data = doc.data();
         if (!seenIds.contains(docId) && data != null && mounted) {
@@ -110,7 +131,8 @@ class _ParentDashbordState extends State<ParentDashbord> with WidgetsBindingObse
         await prefs.setStringList('seenParentNotificationIds', seenIds);
       }
       parentController.pickupNotificationsList.value =
-          snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+          filteredDocs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      print('pickupNotificationsList (parent stream): ' + parentController.pickupNotificationsList.toString());
     });
   }
 

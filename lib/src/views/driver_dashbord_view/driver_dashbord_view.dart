@@ -67,10 +67,14 @@ class _DriverDashBordViewState extends State<DriverDashBordView> {
       final prefs = await SharedPreferences.getInstance();
       List<String> seenIds = prefs.getStringList('seenDriverNotificationIds') ?? [];
       bool updated = false;
+      final oneMinuteAgo = DateTime.now().subtract(Duration(minutes: 1));
       for (var doc in snapshot.docs) {
         final docId = doc.id;
         final data = doc.data();
-        if (!seenIds.contains(docId) && data != null && mounted) {
+        if (data == null) continue;
+        final notifTime = DateTime.tryParse(data['timestamp'] ?? '');
+        if (notifTime == null || notifTime.isBefore(oneMinuteAgo)) continue;
+        if (!seenIds.contains(docId) && mounted) {
           NotificationMessage.show(
             title: "Notification",
             message: data['message'] ?? '',

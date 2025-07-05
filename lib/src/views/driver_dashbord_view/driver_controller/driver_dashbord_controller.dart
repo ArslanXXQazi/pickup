@@ -213,6 +213,8 @@ class DriverController extends GetxController {
         'childName': childName,
         'message': message,
         'timestamp': DateTime.now().toIso8601String(),
+        'type': 'driverStatus',
+        'forRole': 'driver',
       });
       // Save pickup history for Onboard and Dropped Off
       if (status == 'Onboard' || status == 'Dropped Off') {

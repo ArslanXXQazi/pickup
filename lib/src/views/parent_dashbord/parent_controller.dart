@@ -242,23 +242,38 @@ class ParentController extends GetxController {
         'childName': childName,
         'message': message,
         'timestamp': DateTime.now().toIso8601String(),
+        'forRole': 'parent',
       });
     } catch (e) {
       print('Error saving pickup notification: $e');
     }
   }
 
-  /// Fetch pickup notifications for the current user (last 7 days)
+  /// Fetch pickup notifications for the current user (last 1 minute, only for parent)
   Future<void> fetchPickupNotifications() async {
     try {
       String userId = userIdController.userId.value;
-      final oneWeekAgo = DateTime.now().subtract(Duration(days: 7));
+      final oneMinuteAgo = DateTime.now().subtract(Duration(minutes: 1));
+      // Delete notifications older than 1 minute
+      final oldSnapshot = await FirebaseFirestore.instance
+          .collection('pickupNotifications')
+          .where('userId', isEqualTo: userId)
+          .where('forRole', isEqualTo: 'parent')
+          .orderBy('timestamp')
+          .where('timestamp', isLessThan: oneMinuteAgo.toIso8601String())
+          .get();
+      for (var doc in oldSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      // Fetch only notifications from the last 1 minute for parent
       final snapshot = await FirebaseFirestore.instance
           .collection('pickupNotifications')
           .where('userId', isEqualTo: userId)
-          .where('timestamp', isGreaterThan: oneWeekAgo.toIso8601String())
+          .where('forRole', isEqualTo: 'parent')
           .orderBy('timestamp', descending: true)
+          .where('timestamp', isGreaterThan: oneMinuteAgo.toIso8601String())
           .get();
+      print('Fetched notifications (parent fetch): ' + snapshot.docs.map((doc) => doc.data().toString()).join('\n'));
       pickupNotificationsList.value = snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
       print('Error fetching pickup notifications: $e');

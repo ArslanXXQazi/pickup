@@ -213,6 +213,54 @@ class TeacherController extends GetxController {
     });
   }
 
+  /// Save teacher notification
+  Future<void> saveTeacherNotification({
+    required String teacherId,
+    required String childName,
+    required String message,
+  }) async {
+    try {
+      await FirebaseFirestore.instance.collection('teacherNotifications').add({
+        'teacherId': teacherId,
+        'childName': childName,
+        'message': message,
+        'timestamp': DateTime.now().toIso8601String(),
+        'forRole': 'teacher',
+      });
+    } catch (e) {
+      print('Error saving teacher notification: $e');
+    }
+  }
+
+  /// Fetch teacher notifications for the current user (last 1 minute, only for teacher)
+  Future<void> fetchTeacherNotifications(String teacherId) async {
+    try {
+      final oneMinuteAgo = DateTime.now().subtract(Duration(minutes: 1));
+      // Delete notifications older than 1 minute
+      final oldSnapshot = await FirebaseFirestore.instance
+          .collection('teacherNotifications')
+          .where('teacherId', isEqualTo: teacherId)
+          .where('forRole', isEqualTo: 'teacher')
+          .orderBy('timestamp')
+          .where('timestamp', isLessThan: oneMinuteAgo.toIso8601String())
+          .get();
+      for (var doc in oldSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      // Fetch only notifications from the last 1 minute for teacher
+      final snapshot = await FirebaseFirestore.instance
+          .collection('teacherNotifications')
+          .where('teacherId', isEqualTo: teacherId)
+          .where('forRole', isEqualTo: 'teacher')
+          .orderBy('timestamp', descending: true)
+          .where('timestamp', isGreaterThan: oneMinuteAgo.toIso8601String())
+          .get();
+      // teacherNotificationsList.value = snapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      print('Error fetching teacher notifications: $e');
+    }
+  }
+
   @override
   void onClose() {
     _pickupQueueSubscription?.cancel();
