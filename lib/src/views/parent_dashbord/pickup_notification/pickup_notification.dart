@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../controller/constant/linkers/linkers.dart';
 import '../parent_controller.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PickupNotification extends StatefulWidget {
   PickupNotification({super.key});
@@ -63,7 +64,13 @@ class _PickupNotificationState extends State<PickupNotification> {
           final notifications = parentController.pickupNotificationsList
               .where((notification) {
                 if (notification["timestamp"] == null) return false;
-                final notifTime = DateTime.tryParse(notification["timestamp"]);
+                dynamic ts = notification["timestamp"];
+                DateTime? notifTime;
+                if (ts is Timestamp) {
+                  notifTime = ts.toDate();
+                } else if (ts is String) {
+                  notifTime = DateTime.tryParse(ts);
+                }
                 if (notifTime == null) return false;
                 return notifTime.isAfter(DateTime.now().subtract(Duration(minutes: 1)));
               })

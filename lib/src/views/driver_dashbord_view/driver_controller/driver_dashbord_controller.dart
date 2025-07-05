@@ -91,6 +91,7 @@ class DriverController extends GetxController {
   Future<void> fetchAssignedChildren() async {
     try {
       await userIdController.getUserIdAndRole();
+      print('DEBUG: userId: ' + userIdController.userId.value);
       if (userIdController.userId.value.isEmpty) {
         print('------No user ID available');
         assignedChildren.clear();
@@ -101,6 +102,7 @@ class DriverController extends GetxController {
           .collection("userData")
           .doc(userIdController.userId.value)
           .get();
+      print('DEBUG: driverDoc: ' + driverDoc.data().toString());
 
       if (!driverDoc.exists) {
         print('------No driver data found in Firestore');
@@ -121,13 +123,14 @@ class DriverController extends GetxController {
           .collection("addChild")
           .where('bus', isEqualTo: assignedBus.trim())
           .get();
-
+      print('DEBUG: childDocs found: ' + childDocs.docs.length.toString());
       assignedChildren.clear();
       if (childDocs.docs.isEmpty) {
         print('------No children found for bus: $assignedBus');
       } else {
         for (var doc in childDocs.docs) {
           var data = doc.data();
+          print('DEBUG: child doc data: ' + data.toString());
           String childName = data?['childName'] ?? "N/A";
           String status = data?['status'] ?? "Not Picked Up";
 
@@ -135,10 +138,18 @@ class DriverController extends GetxController {
           if (status == 'Dropped Off' && data.containsKey('dropMarker') && data['dropMarker'] != null) {
             var dropMarkerData = data['dropMarker'];
             print('------DEBUG dropMarkerData: $dropMarkerData');
-            print('------DEBUG dropMarkerData[droppedAt]: [33m${dropMarkerData['droppedAt']}[0m');
-            DateTime droppedAt = DateTime.tryParse(dropMarkerData['droppedAt'] ?? '') ?? DateTime.now().subtract(Duration(minutes: 2));
-            print('------DEBUG droppedAt: [32m$droppedAt[0m, now: [32m${DateTime.now()}[0m');
-            print('------DEBUG difference: [31m${DateTime.now().difference(droppedAt).inSeconds} seconds[0m');
+            print('------DEBUG dropMarkerData[droppedAt]: \x1B[33m${dropMarkerData['droppedAt']}\x1B[0m');
+            dynamic droppedAtRaw = dropMarkerData['droppedAt'];
+            DateTime droppedAt;
+            if (droppedAtRaw is Timestamp) {
+              droppedAt = droppedAtRaw.toDate();
+            } else if (droppedAtRaw is String) {
+              droppedAt = DateTime.tryParse(droppedAtRaw) ?? DateTime.now().subtract(Duration(minutes: 2));
+            } else {
+              droppedAt = DateTime.now().subtract(Duration(minutes: 2));
+            }
+            print('------DEBUG droppedAt: \x1B[32m$droppedAt\x1B[0m, now: \x1B[32m${DateTime.now()}\x1B[0m');
+            print('------DEBUG difference: \x1B[31m${DateTime.now().difference(droppedAt).inSeconds} seconds\x1B[0m');
             if (DateTime.now().difference(droppedAt).inSeconds >= 60) {
               await FirebaseFirestore.instance.collection('addChild').doc(doc.id).update({
                 'status': 'Not Picked Up',
@@ -152,7 +163,15 @@ class DriverController extends GetxController {
 
           // Check and reset driverResetAt if needed
           if (data != null && data['driverResetAt'] != null) {
-            DateTime driverResetAt = DateTime.tryParse(data['driverResetAt']) ?? DateTime.now();
+            dynamic driverResetAtRaw = data['driverResetAt'];
+            DateTime driverResetAt;
+            if (driverResetAtRaw is Timestamp) {
+              driverResetAt = driverResetAtRaw.toDate();
+            } else if (driverResetAtRaw is String) {
+              driverResetAt = DateTime.tryParse(driverResetAtRaw) ?? DateTime.now();
+            } else {
+              driverResetAt = DateTime.now();
+            }
             if (DateTime.now().isAfter(driverResetAt)) {
               await FirebaseFirestore.instance.collection('addChild').doc(doc.id).update({
                 'status': 'Not Picked Up',

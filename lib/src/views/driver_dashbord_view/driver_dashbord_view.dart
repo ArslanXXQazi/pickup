@@ -32,6 +32,7 @@ class _DriverDashBordViewState extends State<DriverDashBordView> {
     _loadLastNotificationId();
     controller.userIdController.getUserIdAndRole().then((_) {
       final driverId = controller.userIdController.userId.value;
+      print('DEBUG: DriverId: ' + driverId);
       if (driverId.isNotEmpty) {
         _listenToDriverNotifications(driverId);
       }
@@ -48,6 +49,9 @@ class _DriverDashBordViewState extends State<DriverDashBordView> {
         name: controller.driverName.value,
         busName: controller.userIdController.buses.isNotEmpty ? controller.userIdController.buses.first : '',
       );
+    });
+    ever(controller.assignedChildren, (_) {
+      print('DEBUG: Assigned Children: ' + controller.assignedChildren.toString());
     });
   }
 

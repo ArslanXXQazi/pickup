@@ -7,6 +7,7 @@ import 'package:pick_up_pal/src/utills/snackbar.dart';
 import 'package:pick_up_pal/src/views/admin_dashBoard_view/admin_controller/admin_controller.dart';
 import 'package:pick_up_pal/src/views/auth_views/user_id.dart';
 import 'package:pick_up_pal/src/views/parent_dashbord/parent_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthController extends GetxController {
   var isLoading = false.obs;
@@ -163,6 +164,13 @@ class AuthController extends GetxController {
   void logout() async {
     try {
       await FirebaseAuth.instance.signOut();
+
+      // Clear notification IDs and lists from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('seenParentNotificationIds');
+      await prefs.remove('seenDriverNotificationIds');
+      await prefs.remove('seenTeacherNotificationIds');
+      // Optionally clear any other notification-related keys
 
       final userIdController = Get.find<UserId>();
       final parentController = Get.isRegistered<ParentController>()
