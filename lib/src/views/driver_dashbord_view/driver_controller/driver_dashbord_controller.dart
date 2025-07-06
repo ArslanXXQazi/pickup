@@ -134,11 +134,9 @@ class DriverController extends GetxController {
           String childName = data?['childName'] ?? "N/A";
           String status = data?['status'] ?? "Not Picked Up";
 
-          // Status/marker time-based reset logic
+          // 1. dropMarker ka reset: 7 min pe (status na badlo)
           if (status == 'Dropped Off' && data.containsKey('dropMarker') && data['dropMarker'] != null) {
             var dropMarkerData = data['dropMarker'];
-            print('------DEBUG dropMarkerData: $dropMarkerData');
-            print('------DEBUG dropMarkerData[droppedAt]: \x1B[33m${dropMarkerData['droppedAt']}\x1B[0m');
             dynamic droppedAtRaw = dropMarkerData['droppedAt'];
             DateTime droppedAt;
             if (droppedAtRaw is Timestamp) {
@@ -148,20 +146,16 @@ class DriverController extends GetxController {
             } else {
               droppedAt = DateTime.now().subtract(Duration(minutes: 2));
             }
-            print('------DEBUG droppedAt: \x1B[32m$droppedAt\x1B[0m, now: \x1B[32m${DateTime.now()}\x1B[0m');
-            print('------DEBUG difference: \x1B[31m${DateTime.now().difference(droppedAt).inSeconds} seconds\x1B[0m');
-            if (DateTime.now().difference(droppedAt).inSeconds >= 60) {
+            // Sirf marker ko 7 min baad hatao, status na badlo
+            if (DateTime.now().difference(droppedAt).inMinutes >= 7) {
               await FirebaseFirestore.instance.collection('addChild').doc(doc.id).update({
-                'status': 'Not Picked Up',
-                'updatedAt': Timestamp.now(),
                 'dropMarker': null,
               });
-              print('------Auto-reset: $childName status changed from Dropped Off to Not Picked Up after 60 seconds (app restart safe)');
-              status = 'Not Picked Up';
+              print('------Auto-reset: $childName dropMarker removed after 7 min');
             }
           }
 
-          // Check and reset driverResetAt if needed (10 min auto reset, marker bhi remove ho)
+          // 2. driverResetAt ka reset: 10 min pe (status + marker dono reset)
           if (data != null && data['driverResetAt'] != null) {
             dynamic driverResetAtRaw = data['driverResetAt'];
             DateTime driverResetAt;
