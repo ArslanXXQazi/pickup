@@ -60,10 +60,20 @@ class _ParentDashbordState extends State<ParentDashbord> with WidgetsBindingObse
       final prefs = await SharedPreferences.getInstance();
       List<String> seenIds = prefs.getStringList('seenParentNotificationIds') ?? [];
       bool updated = false;
+      final threeMinutesAgo = DateTime.now().subtract(Duration(minutes: 3));
       for (var doc in snapshot.docs) {
         final docId = doc.id;
         final data = doc.data();
-        if (!seenIds.contains(docId) && data != null && mounted) {
+        if (data == null) continue;
+        DateTime? notifTime;
+        var ts = data['timestamp'];
+        if (ts is Timestamp) {
+          notifTime = ts.toDate();
+        } else if (ts is String) {
+          notifTime = DateTime.tryParse(ts);
+        }
+        if (notifTime == null || notifTime.isBefore(threeMinutesAgo)) continue;
+        if (!seenIds.contains(docId) && mounted) {
           NotificationMessage.show(
             title: "Notification",
             message: data['message'] ?? '',
@@ -91,26 +101,21 @@ class _ParentDashbordState extends State<ParentDashbord> with WidgetsBindingObse
       final prefs = await SharedPreferences.getInstance();
       List<String> seenIds = prefs.getStringList('seenParentNotificationIds') ?? [];
       bool updated = false;
-      final oneMinuteAgo = DateTime.now().subtract(Duration(minutes: 1));
+      final threeMinutesAgo2 = DateTime.now().subtract(Duration(minutes: 3));
       print('Snapshot docs (parent stream): ' + snapshot.docs.map((doc) => doc.data().toString()).join('\n'));
-      // Delete notifications older than 1 minute from Firestore
-      final oldDocs = snapshot.docs.where((doc) {
-        final data = doc.data();
-        if (data == null || data['timestamp'] == null) return false;
-        final notifTime = DateTime.tryParse(data['timestamp']);
-        if (notifTime == null) return false;
-        return notifTime.isBefore(oneMinuteAgo);
-      }).toList();
-      for (var doc in oldDocs) {
-        await doc.reference.delete();
-      }
-      // Only show notifications from the last 1 minute (teacher + driver)
+      // Only show notifications from the last 3 minutes (teacher + driver)
       final filteredDocs = snapshot.docs.where((doc) {
         final data = doc.data();
         if (data == null || data['timestamp'] == null) return false;
-        final notifTime = DateTime.tryParse(data['timestamp']);
+        DateTime? notifTime;
+        var ts = data['timestamp'];
+        if (ts is Timestamp) {
+          notifTime = ts.toDate();
+        } else if (ts is String) {
+          notifTime = DateTime.tryParse(ts);
+        }
         if (notifTime == null) return false;
-        return notifTime.isAfter(oneMinuteAgo);
+        return notifTime.isAfter(threeMinutesAgo2);
       }).toList();
       print('Filtered notifications (parent stream): ' + filteredDocs.map((doc) => doc.data().toString()).join('\n'));
       for (var doc in filteredDocs) {

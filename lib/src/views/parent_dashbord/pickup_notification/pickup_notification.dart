@@ -77,7 +77,7 @@ class _PickupNotificationState extends State<PickupNotification> {
                 return notifTime.isAfter(now.subtract(Duration(minutes: 1))) && notifTime.isBefore(now.add(Duration(minutes: 1)));
               })
               .toList();
-          print('UI notifications: ' + notifications.toString());
+          print('DEBUG: Final UI notifications: ' + notifications.toString());
           if (notifications.isEmpty) {
             return Center(
               child: GreenText(
