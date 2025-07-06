@@ -61,22 +61,7 @@ class _PickupNotificationState extends State<PickupNotification> {
           top: screenHeight * 0.05,
         ),
         child: Obx(() {
-          final notifications = parentController.pickupNotificationsList
-              .where((notification) {
-                if (notification["timestamp"] == null) return false;
-                dynamic ts = notification["timestamp"];
-                DateTime? notifTime;
-                if (ts is Timestamp) {
-                  notifTime = ts.toDate();
-                } else if (ts is String) {
-                  notifTime = DateTime.tryParse(ts);
-                }
-                if (notifTime == null) return false;
-                final now = DateTime.now();
-                // Sirf 1 minute ke andar ke notifications, na zyada purane, na future ke
-                return notifTime.isAfter(now.subtract(Duration(minutes: 1))) && notifTime.isBefore(now.add(Duration(minutes: 1)));
-              })
-              .toList();
+          final notifications = parentController.pickupNotificationsList;
           print('DEBUG: Final UI notifications: ' + notifications.toString());
           if (notifications.isEmpty) {
             return Center(

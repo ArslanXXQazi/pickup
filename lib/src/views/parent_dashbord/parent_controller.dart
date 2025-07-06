@@ -258,7 +258,6 @@ class ParentController extends GetxController {
       final snapshot = await FirebaseFirestore.instance
           .collection('pickupNotifications')
           .where('userId', isEqualTo: userId)
-          .where('forRole', isEqualTo: 'parent')
           .orderBy('timestamp', descending: true)
           .where('timestamp', isGreaterThan: oneWeekAgo.toIso8601String())
           .get();
