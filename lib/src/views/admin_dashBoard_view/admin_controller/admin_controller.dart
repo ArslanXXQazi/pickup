@@ -246,6 +246,16 @@ class AdminController extends GetxController {
         'updatedAt': Timestamp.now(),
       });
       selectedBuses[driverId] = busName; // Update local state
+      // Update assignedDriverId for all children with this bus
+      var childDocs = await FirebaseFirestore.instance
+          .collection('addChild')
+          .where('bus', isEqualTo: busName)
+          .get();
+      for (var doc in childDocs.docs) {
+        await doc.reference.update({
+          'assignedDriverId': driverId,
+        });
+      }
       driverLoadingStates[driverId] = false;
       NotificationMessage.show(
         title: 'Success',
