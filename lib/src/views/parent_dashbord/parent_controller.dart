@@ -181,6 +181,7 @@ class ParentController extends GetxController {
     required String childId,
     required String childName,
     required String userId,
+    String? status,
   }) async
   {
     try {
@@ -189,6 +190,7 @@ class ParentController extends GetxController {
         'childName': childName,
         'userId': userId,
         'pickupTime': DateTime.now().toIso8601String(),
+        'status': status ?? 'Picked Up',
       });
     } catch (e) {
       print('Error saving pickup history: $e');
@@ -218,11 +220,11 @@ class ParentController extends GetxController {
         'pickedUp': pickedUp,
       });
       if (pickedUp) {
-        // Find child name and userId
+        // Sirf driver ki pickup history save karo
         int idx = userIdController.childIds.indexOf(childId);
         String childName = idx != -1 ? userIdController.childNames[idx] : '';
         String userId = userIdController.userId.value;
-        await savePickupHistory(childId: childId, childName: childName, userId: userId);
+        await savePickupHistory(childId: childId, childName: childName, userId: userId, status: 'Dropped Off');
         await cleanupOldPickupHistory();
       }
     } catch (e) {
@@ -293,12 +295,23 @@ class ParentController extends GetxController {
         "status": "Picked Up",
       });
       print('confirmParentPickup: Firestore update done for $childId');
-      // Fetch child data for notification
+      // Fetch child data for notification and history
       var doc = await FirebaseFirestore.instance.collection("addChild").doc(childId).get();
       var data = doc.data();
       if (data != null) {
         String childName = data['childName'] ?? '';
         String className = data['class'] ?? '';
+        String userId = data['userId'] ?? '';
+        
+        // Save pickup history when parent confirms pickup
+        await savePickupHistory(
+          childId: childId,
+          childName: childName,
+          userId: userId,
+          status: 'Picked Up',
+        );
+        await cleanupOldPickupHistory();
+        
         // Query teacher with this class
         var teacherQuery = await FirebaseFirestore.instance
             .collection('userData')

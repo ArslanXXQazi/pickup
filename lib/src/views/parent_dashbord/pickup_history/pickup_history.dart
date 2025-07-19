@@ -67,8 +67,8 @@ class _PickupHistoryState extends State<PickupHistory> {
             return const Apploader3();
           }
           final history = parentController.pickupHistoryList;
-          final droppedOffHistory = history.where((entry) => entry['status'] == 'Dropped Off').toList();
-          if (droppedOffHistory.isEmpty) {
+          // Show all pickup history entries (both driver dropped off and parent confirmed pickups)
+          if (history.isEmpty) {
             return Center(
               child: GreenText(
                 text: 'No pickup history found',
@@ -81,9 +81,9 @@ class _PickupHistoryState extends State<PickupHistory> {
             children: [
               Expanded(
                 child: ListView.builder(
-                  itemCount: droppedOffHistory.length,
+                  itemCount: history.length,
                   itemBuilder: (context, index) {
-                    final entry = droppedOffHistory[index];
+                    final entry = history[index];
                     return Padding(
                       padding: EdgeInsets.only(bottom: screenHeight * 0.02),
                       child: Container(

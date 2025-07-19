@@ -138,13 +138,7 @@ class TeacherController extends GetxController {
       if (data != null) {
         String childName = data['childName'] ?? '';
         String userId = data['userId'] ?? '';
-        // Save pickup history using ParentController
-        await Get.find<ParentController>().savePickupHistory(
-          childId: childId,
-          childName: childName,
-          userId: userId,
-        );
-        await Get.find<ParentController>().cleanupOldPickupHistory();
+        // Yahan se history save karna hata diya hai
         // Save pickup notification for parent
         await Get.find<ParentController>().savePickupNotification(
           userId: userId,
